@@ -78,7 +78,7 @@ export class MockMetadataProvider implements MetadataProvider {
     );
     const targetName = genreObj ? genreObj.name.toLowerCase() : String(genreId).toLowerCase();
 
-    let list = DEMO_MEDIA.filter((m) => m.type === mediaType);
+    let list = mediaType ? DEMO_MEDIA.filter((m) => m.type === mediaType) : DEMO_MEDIA;
     if (targetName !== "all") {
       list = list.filter((m) =>
         m.genres.some((g) => g.toLowerCase() === targetName)

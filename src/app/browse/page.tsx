@@ -8,7 +8,7 @@ import { MediaModal } from "@/components/media/MediaModal";
 import { MediaCardSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
-import { fetchTrending, fetchPopular, fetchGenres } from "@/lib/metadata/client";
+import { fetchTrending, fetchPopular, fetchGenres, fetchByGenre } from "@/lib/metadata/client";
 import { AlertCircle, ChevronLeft, ChevronRight, Film, Flame, RefreshCw, Sparkles, Tv } from "lucide-react";
 
 function BrowseContent() {
@@ -47,7 +47,13 @@ function BrowseContent() {
 
   useEffect(() => {
     fetchGenres(filterType === "tv" ? "tv" : "movie")
-      .then((g) => setGenres(g))
+      .then((g) => {
+        const list = [...g];
+        if (!list.some((item) => item.slug === "anime")) {
+          list.splice(1, 0, { id: "anime", name: "Anime", slug: "anime" });
+        }
+        setGenres(list);
+      })
       .catch(() => {});
   }, [filterType]);
 
@@ -61,7 +67,9 @@ function BrowseContent() {
     setError(null);
     try {
       let data;
-      if (sort === "trending") {
+      if (genre && genre.toLowerCase() === "anime") {
+        data = await fetchByGenre("anime", type === "all" ? undefined : type, page);
+      } else if (sort === "trending") {
         data = await fetchTrending(type, "week", page);
       } else {
         data = await fetchPopular(type === "all" ? "movie" : type, page);
@@ -69,8 +77,8 @@ function BrowseContent() {
 
       let results = data.results || [];
 
-      // Filter by genre if selected
-      if (genre && genre !== "all") {
+      // Filter by genre if selected (for non-anime genres)
+      if (genre && genre !== "all" && genre.toLowerCase() !== "anime") {
         const targetG = genre.toLowerCase();
         const filtered = results.filter((m) =>
           m.genres.some((g) => g.toLowerCase().includes(targetG) || targetG.includes(g.toLowerCase()))
@@ -136,7 +144,18 @@ function BrowseContent() {
       {/* Browse Header */}
       <div className="space-y-3">
         <h1 className="text-3xl font-black text-foreground flex items-center gap-2.5">
-          {filterType === "tv" ? (
+          {filterGenre.toLowerCase() === "anime" ? (
+            <>
+              <Sparkles className="w-7 h-7 text-brand-400" />
+              <span>
+                {filterType === "tv"
+                  ? "Anime Series"
+                  : filterType === "movie"
+                  ? "Anime Movies"
+                  : "Anime Collection"}
+              </span>
+            </>
+          ) : filterType === "tv" ? (
             <>
               <Tv className="w-7 h-7 text-brand-400" />
               <span>{filterSort === "trending" ? "Trending TV Series" : "Popular TV Series"}</span>
@@ -154,7 +173,9 @@ function BrowseContent() {
           )}
         </h1>
         <p className="text-sm text-foreground-muted max-w-xl">
-          {filterType === "tv"
+          {filterGenre.toLowerCase() === "anime"
+            ? "Stream acclaimed Japanese anime series, cyberpunk sagas, supernatural thrillers, and studio feature films."
+            : filterType === "tv"
             ? "Discover television seasons, binge-worthy series, and global trending releases."
             : filterType === "movie"
             ? "Stream blockbuster movies, Hollywood cinema, and latest theatre releases."

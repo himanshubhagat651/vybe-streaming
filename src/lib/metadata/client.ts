@@ -90,3 +90,19 @@ export async function fetchGenres(type: "movie" | "tv" = "movie"): Promise<Genre
   if (!res.ok) return [];
   return await res.json();
 }
+
+export async function fetchByGenre(
+  genre: string,
+  type?: "movie" | "tv",
+  page: number = 1
+): Promise<PaginatedResult<MediaItem>> {
+  const typeQuery = type ? `&type=${type}` : "";
+  const res = await fetch(
+    `/api/metadata/genre?genre=${encodeURIComponent(genre)}${typeQuery}&page=${page}`
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return await res.json();
+}

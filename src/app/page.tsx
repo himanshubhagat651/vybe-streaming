@@ -7,7 +7,7 @@ import { HeroBanner } from "@/components/media/HeroBanner";
 import { MediaRow } from "@/components/media/MediaRow";
 import { MediaModal } from "@/components/media/MediaModal";
 import { MediaCardSkeleton } from "@/components/ui/Skeleton";
-import { fetchTrending, fetchPopular, fetchGenres } from "@/lib/metadata/client";
+import { fetchTrending, fetchPopular, fetchGenres, fetchByGenre } from "@/lib/metadata/client";
 import { AlertCircle, RefreshCw, History, Play } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useUserData } from "@/context/UserDataContext";
@@ -24,6 +24,7 @@ export default function HomePage() {
   const [trendingMovies, setTrendingMovies] = useState<MediaItem[]>([]);
   const [trendingSeries, setTrendingSeries] = useState<MediaItem[]>([]);
   const [popularSeries, setPopularSeries] = useState<MediaItem[]>([]);
+  const [animeList, setAnimeList] = useState<MediaItem[]>([]);
   const [trendingAll, setTrendingAll] = useState<MediaItem[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
   const [activeGenre, setActiveGenre] = useState("all");
@@ -35,13 +36,14 @@ export default function HomePage() {
     setIsLoading(true);
     setError(null);
     try {
-      const [trendingData, trendingSeriesData, popSeriesData, trendingMoviesData, genreList] =
+      const [trendingData, trendingSeriesData, popSeriesData, trendingMoviesData, genreList, animeData] =
         await Promise.all([
           fetchTrending("all", "day", 1),
           fetchTrending("tv", "day", 1),
           fetchPopular("tv", 1),
           fetchPopular("movie", 1),
           fetchGenres("movie"),
+          fetchByGenre("anime").catch(() => ({ results: [] })),
         ]);
 
       const allItems = trendingData.results || [];
@@ -55,7 +57,13 @@ export default function HomePage() {
       setTrendingSeries(trendingSeriesData.results || []);
       setPopularSeries(popSeriesData.results || []);
       setTrendingMovies(trendingMoviesData.results || []);
-      setGenres(genreList || []);
+      setAnimeList(animeData.results || []);
+
+      const listWithAnime = [...(genreList || [])];
+      if (!listWithAnime.some((g) => g.slug === "anime")) {
+        listWithAnime.splice(1, 0, { id: "anime", name: "Anime", slug: "anime" });
+      }
+      setGenres(listWithAnime);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load media catalog.");
     } finally {
@@ -227,6 +235,25 @@ export default function HomePage() {
             </div>
           )}
 
+          {/* Active Genre Filter Showcase */}
+          {activeGenre !== "all" && (
+            <div className="p-4 rounded-3xl bg-brand-600/10 border border-brand-500/20">
+              <MediaRow
+                title={`${genres.find((g) => g.slug === activeGenre)?.name || activeGenre} Spotlight`}
+                subtitle={`Showing featured ${activeGenre} titles from the catalog`}
+                items={
+                  activeGenre === "anime"
+                    ? animeList
+                    : trendingAll.filter((m) =>
+                        m.genres.some((g) => g.toLowerCase() === activeGenre.toLowerCase())
+                      )
+                }
+                viewAllHref={`/browse?genre=${activeGenre}`}
+                onOpenInfo={(item) => setSelectedMedia(item)}
+              />
+            </div>
+          )}
+
           {/* Trending Today Row */}
           <MediaRow
             title="Trending Today"
@@ -244,6 +271,17 @@ export default function HomePage() {
             viewAllHref="/browse?type=tv&sort=trending"
             onOpenInfo={(item) => setSelectedMedia(item)}
           />
+
+          {/* Top Anime & Animation Section */}
+          {animeList.length > 0 && (
+            <MediaRow
+              title="Top Anime & Animation Hits"
+              subtitle="Acclaimed Japanese anime series, cyberpunk sagas, and epic adventures"
+              items={animeList}
+              viewAllHref="/anime"
+              onOpenInfo={(item) => setSelectedMedia(item)}
+            />
+          )}
 
           {/* Popular Movies Row */}
           <MediaRow

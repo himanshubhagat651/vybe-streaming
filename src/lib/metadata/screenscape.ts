@@ -65,6 +65,20 @@ export class ScreenScapeProvider implements MetadataProvider {
       genres.push(isTv ? "TV Series" : "Cinema");
     }
 
+    const isAnime =
+      raw.original_language === "ja" ||
+      (Array.isArray(raw.origin_country) && raw.origin_country.includes("JP")) ||
+      (genres.some((g) => g.toLowerCase() === "animation") &&
+        (raw.original_language === "ja" ||
+          (Array.isArray(raw.origin_country) && raw.origin_country.includes("JP")))) ||
+      ["edgerunners", "apothecary", "titan", "slayer", "kaisen", "death note", "piece", "chainsaw", "solo leveling", "spirited away", "your name"].some((kw) =>
+        title.toLowerCase().includes(kw)
+      );
+
+    if (isAnime && !genres.some((g) => g.toLowerCase() === "anime")) {
+      genres.unshift("Anime");
+    }
+
     const releaseDate = raw.release_date || raw.first_air_date || "";
     const releaseYear = releaseDate ? releaseDate.split("-")[0] : undefined;
 
@@ -321,8 +335,46 @@ export class ScreenScapeProvider implements MetadataProvider {
     mediaType?: "movie" | "tv",
     page: number = 1
   ): Promise<PaginatedResult<MediaItem>> {
+    const targetGenre =
+      typeof genreId === "string" ? genreId.toLowerCase() : GENRE_MAP[Number(genreId)]?.toLowerCase();
+
+    // Specialize for Anime: combine curated anime collection and trending anime
+    if (targetGenre === "anime") {
+      const animeFromDemo = DEMO_MEDIA.filter((m) =>
+        m.genres.some((g) => g.toLowerCase() === "anime") &&
+        (!mediaType || m.type === mediaType)
+      );
+
+      try {
+        const trending = await this.getTrending(mediaType || "all", "day", page);
+        const liveAnime = trending.results.filter((m) =>
+          m.genres.some((g) => g.toLowerCase() === "anime")
+        );
+        const seen = new Set<number>();
+        const merged: MediaItem[] = [];
+        for (const item of [...animeFromDemo, ...liveAnime]) {
+          if (!seen.has(item.tmdbId)) {
+            seen.add(item.tmdbId);
+            merged.push(item);
+          }
+        }
+        return {
+          page: 1,
+          totalPages: 1,
+          totalResults: merged.length,
+          results: merged,
+        };
+      } catch {
+        return {
+          page: 1,
+          totalPages: 1,
+          totalResults: animeFromDemo.length,
+          results: animeFromDemo,
+        };
+      }
+    }
+
     const trending = await this.getTrending(mediaType || "all", "day", page);
-    const targetGenre = typeof genreId === "string" ? genreId.toLowerCase() : GENRE_MAP[Number(genreId)]?.toLowerCase();
 
     if (!targetGenre) return trending;
 

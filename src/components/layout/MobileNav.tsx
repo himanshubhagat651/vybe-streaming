@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Film, Tv, Search, Bookmark } from "lucide-react";
+import { Home, Film, Tv, Sparkles, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function MobileNav() {
@@ -13,7 +13,7 @@ export function MobileNav() {
     { name: "Home", href: "/", icon: Home },
     { name: "Movies", href: "/browse?type=movie", icon: Film },
     { name: "Series", href: "/browse?type=tv", icon: Tv },
-    { name: "Search", href: "/search", icon: Search },
+    { name: "Anime", href: "/anime", icon: Sparkles },
     { name: "Saved", href: "/watchlist", icon: Bookmark },
   ];
 

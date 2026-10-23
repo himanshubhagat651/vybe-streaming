@@ -11,6 +11,7 @@ import {
   Bookmark,
   History,
   Compass,
+  Sparkles,
 } from "lucide-react";
 import { DEMO_GENRES } from "@/lib/demoData";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: "Home", href: "/", icon: Home },
     { name: "Movies", href: "/browse?type=movie", icon: Film },
     { name: "TV Series", href: "/browse?type=tv", icon: Tv },
+    { name: "Anime", href: "/anime", icon: Sparkles },
     { name: "Trending", href: "/browse?sort=trending", icon: Flame },
   ];
 
