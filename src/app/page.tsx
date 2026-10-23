@@ -1,16 +1,24 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { MediaItem, Genre } from "@/lib/types";
 import { HeroBanner } from "@/components/media/HeroBanner";
 import { MediaRow } from "@/components/media/MediaRow";
 import { MediaModal } from "@/components/media/MediaModal";
 import { MediaCardSkeleton } from "@/components/ui/Skeleton";
 import { fetchTrending, fetchPopular, fetchGenres } from "@/lib/metadata/client";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw, History, Play } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useUserData } from "@/context/UserDataContext";
+
+function formatDuration(sec: number): string {
+  const m = Math.floor(sec / 60);
+  return `${m}m`;
+}
 
 export default function HomePage() {
+  const { continueWatching } = useUserData();
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [featuredMedia, setFeaturedMedia] = useState<MediaItem | null>(null);
   const [trendingMovies, setTrendingMovies] = useState<MediaItem[]>([]);
@@ -45,8 +53,8 @@ export default function HomePage() {
       setPopularSeries(popSeriesData.results || []);
       setTrendingMovies(trendingMoviesData.results || []);
       setGenres(genreList || []);
-    } catch (err: any) {
-      setError(err.message || "Failed to load media catalog.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to load media catalog.");
     } finally {
       setIsLoading(false);
     }
@@ -95,10 +103,101 @@ export default function HomePage() {
             />
           )}
 
+          {/* Continue Watching Row (Active user watch progress) */}
+          {continueWatching.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-foreground flex items-center gap-2">
+                    <History className="w-5 h-5 text-indigo-400" />
+                    Continue Watching
+                  </h2>
+                  <p className="text-xs text-foreground-muted">
+                    Resume where you left off
+                  </p>
+                </div>
+                <Link
+                  href="/history"
+                  className="text-xs font-semibold text-brand-400 hover:text-brand-300 transition-colors"
+                >
+                  View All History &rarr;
+                </Link>
+              </div>
+
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+                {continueWatching.map((item) => {
+                  const watchUrl = `/watch/${item.mediaType}/${item.tmdbId}${
+                    item.season ? `?s=${item.season}&e=${item.episode}` : ""
+                  }`;
+
+                  const percent =
+                    item.durationSeconds && item.durationSeconds > 0
+                      ? Math.min(Math.round((item.progressSeconds / item.durationSeconds) * 100), 100)
+                      : 50;
+
+                  const imageSrc = item.backdropPath
+                    ? item.backdropPath.startsWith("http")
+                      ? item.backdropPath
+                      : `https://image.tmdb.org/t/p/w780${item.backdropPath}`
+                    : item.posterPath
+                    ? item.posterPath.startsWith("http")
+                      ? item.posterPath
+                      : `https://image.tmdb.org/t/p/w500${item.posterPath}`
+                    : null;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="group relative flex-none w-64 sm:w-72 rounded-2xl overflow-hidden bg-surface border border-surface-border hover:border-brand-500/40 transition-all select-none shadow-md"
+                    >
+                      <Link href={watchUrl} className="relative aspect-video w-full block bg-black">
+                        {imageSrc && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={imageSrc}
+                            alt={item.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="w-10 h-10 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-lg">
+                            <Play className="w-4 h-4 fill-current ml-0.5" />
+                          </div>
+                        </div>
+
+                        {item.mediaType === "tv" && (
+                          <span className="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-black/70 text-white border border-white/10">
+                            S{item.season ?? 1}:E{item.episode ?? 1}
+                          </span>
+                        )}
+
+                        <div className="absolute bottom-0 inset-x-0 h-1 bg-white/20">
+                          <div className="h-full bg-brand-500" style={{ width: `${percent}%` }} />
+                        </div>
+                      </Link>
+
+                      <div className="p-3">
+                        <h3 className="font-bold text-xs text-foreground truncate group-hover:text-brand-400">
+                          <Link href={watchUrl}>{item.title}</Link>
+                        </h3>
+                        <p className="text-[10px] text-foreground-muted mt-0.5">
+                          {formatDuration(item.progressSeconds)} watched • {percent}%
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Quick Category Filter Pills */}
           {genres.length > 0 && (
             <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
               <button
+                type="button"
                 onClick={() => setActiveGenre("all")}
                 className={`px-4 py-2 rounded-full text-xs md:text-sm font-semibold tracking-wide whitespace-nowrap transition-all select-none ${
                   activeGenre === "all"
@@ -111,6 +210,7 @@ export default function HomePage() {
               {genres.slice(0, 10).map((genre) => (
                 <button
                   key={genre.id}
+                  type="button"
                   onClick={() => setActiveGenre(genre.slug)}
                   className={`px-4 py-2 rounded-full text-xs md:text-sm font-semibold tracking-wide whitespace-nowrap transition-all select-none ${
                     activeGenre === genre.slug

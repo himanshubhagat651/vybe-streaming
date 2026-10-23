@@ -21,16 +21,17 @@ import {
   RefreshCw,
   Info,
 } from "lucide-react";
+import { useUserData } from "@/context/UserDataContext";
 
 export default function MovieDetailsPage() {
   const params = useParams();
   const rawId = params.id as string;
+  const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useUserData();
 
   const [media, setMedia] = useState<MediaItem | null>(null);
   const [related, setRelated] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -171,23 +172,45 @@ export default function MovieDetailsPage() {
                 </Button>
               </Link>
 
-              <Button
-                size="lg"
-                variant={isBookmarked ? "primary" : "glass"}
-                onClick={() => setIsBookmarked(!isBookmarked)}
-              >
-                {isBookmarked ? (
-                  <>
-                    <Check className="w-4 h-4 mr-2" />
-                    In Watchlist
-                  </>
-                ) : (
-                  <>
-                    <Bookmark className="w-4 h-4 mr-2" />
-                    Save to Watchlist
-                  </>
-                )}
-              </Button>
+              {(() => {
+                const isBookmarked = media ? isInWatchlist(media.tmdbId, "movie") : false;
+                const toggleWatchlist = async () => {
+                  if (!media) return;
+                  if (isBookmarked) {
+                    await removeFromWatchlist(media.tmdbId, "movie");
+                  } else {
+                    await addToWatchlist({
+                      tmdbId: media.tmdbId,
+                      mediaType: "movie",
+                      title: media.title,
+                      posterPath: media.posterUrl,
+                      backdropPath: media.backdropUrl,
+                      voteAverage: media.rating,
+                      releaseYear: media.releaseYear,
+                    });
+                  }
+                };
+
+                return (
+                  <Button
+                    size="lg"
+                    variant={isBookmarked ? "primary" : "glass"}
+                    onClick={toggleWatchlist}
+                  >
+                    {isBookmarked ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        In Watchlist
+                      </>
+                    ) : (
+                      <>
+                        <Bookmark className="w-4 h-4 mr-2" />
+                        Save to Watchlist
+                      </>
+                    )}
+                  </Button>
+                );
+              })()}
             </div>
           </div>
         </div>

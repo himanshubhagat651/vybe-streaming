@@ -23,10 +23,12 @@ import {
   Info,
   Film,
 } from "lucide-react";
+import { useUserData } from "@/context/UserDataContext";
 
 export default function WatchPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const { isInWatchlist, addToWatchlist, removeFromWatchlist, updateWatchProgress } = useUserData();
   const rawType = (params.type as string) || "movie";
   const rawId = params.id as string;
   const initialSeason = parseInt(searchParams.get("s") || "1", 10);
@@ -44,7 +46,6 @@ export default function WatchPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [isTheaterMode, setIsTheaterMode] = useState(false);
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
@@ -81,6 +82,43 @@ export default function WatchPage() {
       isMounted = false;
     };
   }, [rawId, mediaType, initialSeason]);
+
+  // Automatically record playback session to user's watch history / Continue Watching
+  useEffect(() => {
+    if (media && (media.tmdbId || tmdbIdNum)) {
+      const targetId = media.tmdbId || tmdbIdNum;
+      updateWatchProgress({
+        tmdbId: targetId,
+        mediaType,
+        title: media.title,
+        posterPath: media.posterUrl,
+        backdropPath: media.backdropUrl,
+        season: mediaType === "tv" ? activeSeason : null,
+        episode: mediaType === "tv" ? activeEpisode : null,
+        progressSeconds: 300,
+        durationSeconds: mediaType === "tv" ? 3000 : 7200,
+      });
+    }
+  }, [media, activeSeason, activeEpisode, mediaType, tmdbIdNum, updateWatchProgress]);
+
+  const isBookmarked = media ? isInWatchlist(media.tmdbId || tmdbIdNum, mediaType) : false;
+  const toggleWatchlist = async () => {
+    if (!media) return;
+    const targetId = media.tmdbId || tmdbIdNum;
+    if (isBookmarked) {
+      await removeFromWatchlist(targetId, mediaType);
+    } else {
+      await addToWatchlist({
+        tmdbId: targetId,
+        mediaType,
+        title: media.title,
+        posterPath: media.posterUrl,
+        backdropPath: media.backdropUrl,
+        voteAverage: media.rating,
+        releaseYear: media.releaseYear,
+      });
+    }
+  };
 
   const handleEpisodeChange = (s: number, e: number) => {
     setActiveSeason(s);
@@ -221,7 +259,7 @@ export default function WatchPage() {
                 <Button
                   size="sm"
                   variant={isBookmarked ? "primary" : "outline"}
-                  onClick={() => setIsBookmarked(!isBookmarked)}
+                  onClick={toggleWatchlist}
                 >
                   {isBookmarked ? (
                     <>

@@ -69,3 +69,59 @@ export interface ProviderStatus {
   isConfigured: boolean;
   message?: string;
 }
+
+// ==============================================================================
+// Phase 4: Auth, Profiles, Watchlist & History Types
+// ==============================================================================
+
+export type SupportedLanguage = "eng" | "hindi" | "french";
+export type SupportedTheme = "dark" | "light";
+
+export interface UserProfile {
+  id: string;
+  email: string | null;
+  username: string;
+  avatarUrl?: string | null;
+  preferredLanguage: SupportedLanguage;
+  preferredTheme: SupportedTheme;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface WatchlistItem {
+  id: string;
+  userId: string;
+  tmdbId: number;
+  mediaType: MediaType;
+  title: string;
+  posterPath?: string | null;
+  backdropPath?: string | null;
+  voteAverage?: number;
+  releaseYear?: string;
+  createdAt: string;
+}
+
+export interface WatchHistoryItem {
+  id: string;
+  userId: string;
+  tmdbId: number;
+  mediaType: MediaType;
+  title: string;
+  posterPath?: string | null;
+  backdropPath?: string | null;
+  season?: number | null;
+  episode?: number | null;
+  progressSeconds: number;
+  durationSeconds?: number | null;
+  completed: boolean;
+  lastWatchedAt: string;
+}
+
+export interface SupabaseConfigStatus {
+  isConfigured: boolean;
+  mode: "supabase" | "demo_isolated";
+  hasUrl: boolean;
+  hasAnonKey: boolean;
+  missingVars: string[];
+  message: string;
+}

@@ -6,6 +6,7 @@ import { Play, Star, Bookmark, Check, Info, Film, Tv } from "lucide-react";
 import { MediaItem } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
+import { useUserData } from "@/context/UserDataContext";
 
 interface MediaCardProps {
   media: MediaItem;
@@ -14,13 +15,27 @@ interface MediaCardProps {
 }
 
 export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useUserData();
   const [imgError, setImgError] = useState(false);
 
-  const toggleBookmark = (e: React.MouseEvent) => {
+  const isBookmarked = isInWatchlist(media.tmdbId, media.type);
+
+  const toggleBookmark = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsBookmarked(!isBookmarked);
+    if (isBookmarked) {
+      await removeFromWatchlist(media.tmdbId, media.type);
+    } else {
+      await addToWatchlist({
+        tmdbId: media.tmdbId,
+        mediaType: media.type,
+        title: media.title,
+        posterPath: media.posterUrl,
+        backdropPath: media.backdropUrl,
+        voteAverage: media.rating,
+        releaseYear: media.releaseYear,
+      });
+    }
   };
 
   const handleInfo = (e: React.MouseEvent) => {
@@ -39,6 +54,7 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
       {/* Poster Image Container */}
       <Link href={watchUrl} className="relative aspect-poster w-full overflow-hidden bg-surface-hover">
         {hasValidImage ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img
             src={media.posterUrl!}
             alt={media.title}
@@ -84,7 +100,7 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
         <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
           <button
             onClick={toggleBookmark}
-            aria-label="Add to watchlist"
+            aria-label={isBookmarked ? "Remove from watchlist" : "Add to watchlist"}
             className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-colors",
               isBookmarked
@@ -106,47 +122,35 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
         </div>
       </Link>
 
-      {/* Card Metadata Details */}
-      <div className="p-3.5 flex flex-col justify-between flex-1 space-y-1.5">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-2 text-[11px] text-foreground-muted">
-            <span className="uppercase font-semibold tracking-wider text-brand-400">
+      {/* Card Body */}
+      <div className="p-3 flex flex-col flex-1 justify-between gap-1.5">
+        <div>
+          <div className="flex items-center gap-2 text-[11px] text-foreground-muted font-medium">
+            <span className="uppercase tracking-wider font-mono text-[10px] text-brand-400 font-semibold">
               {media.type === "tv" ? "TV Series" : "Movie"}
             </span>
-            {media.releaseYear && (
-              <>
-                <span>•</span>
-                <span>{media.releaseYear}</span>
-              </>
-            )}
-            {media.runtime && (
-              <>
-                <span>•</span>
-                <span>{media.runtime}</span>
-              </>
-            )}
+            {media.releaseYear && <span>•</span>}
+            {media.releaseYear && <span>{media.releaseYear}</span>}
+            {media.runtime && <span>•</span>}
+            {media.runtime && <span>{media.runtime}</span>}
           </div>
 
-          <Link href={watchUrl} className="block group-hover:text-brand-400 transition-colors">
-            <h3 className="font-semibold text-sm text-foreground truncate" title={media.title}>
-              {media.title}
-            </h3>
-          </Link>
+          <h3 className="font-bold text-sm text-foreground group-hover:text-brand-400 transition-colors line-clamp-1 mt-0.5">
+            <Link href={watchUrl}>{media.title}</Link>
+          </h3>
         </div>
 
-        {/* Genre Tags (only when provided) */}
-        {media.genres && media.genres.length > 0 && (
-          <div className="flex flex-wrap gap-1 pt-1">
-            {media.genres.slice(0, 2).map((genre) => (
-              <span
-                key={genre}
-                className="text-[10px] text-foreground-muted/80 bg-surface-hover px-1.5 py-0.5 rounded border border-surface-border/50"
-              >
-                {genre}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* Genres Pill Row */}
+        <div className="flex flex-wrap gap-1 mt-1">
+          {media.genres.slice(0, 2).map((genre) => (
+            <span
+              key={genre}
+              className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface-hover text-foreground-muted border border-surface-border"
+            >
+              {genre}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );

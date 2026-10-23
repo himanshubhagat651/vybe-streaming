@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { AuthProvider } from "@/context/AuthContext";
+import { UserDataProvider } from "@/context/UserDataContext";
 import { AppShell } from "@/components/layout/AppShell";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 export const metadata: Metadata = {
   title: "VYBE — Premium Movies & TV Shows Streaming",
@@ -27,7 +30,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className="dark">
       <body className="min-h-screen flex flex-col bg-background text-foreground antialiased selection:bg-brand-500/30 selection:text-brand-300">
         <ThemeProvider>
-          <AppShell>{children}</AppShell>
+          <AuthProvider>
+            <UserDataProvider>
+              <AppShell>{children}</AppShell>
+              <AuthModal />
+            </UserDataProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -22,6 +22,8 @@ import {
   DEFAULT_PLAYER_BASE_URL,
 } from "@/lib/player/url";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/context/AuthContext";
+import { SupportedLanguage } from "@/lib/types";
 
 interface ScreenScapePlayerProps {
   tmdbId: number | string;
@@ -44,11 +46,27 @@ export function ScreenScapePlayer({
   onToggleTheaterMode,
   className = "",
 }: ScreenScapePlayerProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("eng");
+  const { user, updateProfile } = useAuth();
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(
+    user?.preferredLanguage || "eng"
+  );
   const [selectedServer, setSelectedServer] = useState<string>(DEFAULT_PLAYER_BASE_URL);
   const [isLoadingIframe, setIsLoadingIframe] = useState<boolean>(true);
   const [reloadKey, setReloadKey] = useState<number>(0);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (user?.preferredLanguage) {
+      setSelectedLanguage(user.preferredLanguage);
+    }
+  }, [user?.preferredLanguage]);
+
+  const handleLanguageChange = (newLang: string) => {
+    setSelectedLanguage(newLang);
+    if (user && (newLang === "eng" || newLang === "hindi" || newLang === "french")) {
+      updateProfile({ preferredLanguage: newLang as SupportedLanguage });
+    }
+  };
 
   // Validate parameters and generate the documented ScreenScape URL
   const { url: embedUrl, validation } = buildScreenScapeEmbedUrl({
@@ -183,7 +201,7 @@ export function ScreenScapePlayer({
             <span className="text-xs font-semibold text-foreground">Audio:</span>
             <select
               value={selectedLanguage}
-              onChange={(e) => setSelectedLanguage(e.target.value)}
+              onChange={(e) => handleLanguageChange(e.target.value)}
               aria-label="Select Preferred Audio Language"
               className="h-8 px-2.5 rounded-lg text-xs bg-surface-hover border border-surface-border text-foreground focus:outline-none focus:ring-1 focus:ring-brand-500 font-medium"
             >

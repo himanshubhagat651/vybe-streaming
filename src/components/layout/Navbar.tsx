@@ -8,7 +8,6 @@ import {
   Sun,
   Moon,
   Menu,
-  Bell,
   Bookmark,
   History,
   SlidersHorizontal,
@@ -17,10 +16,18 @@ import {
   Star,
   Film,
   Tv,
+  LogIn,
+  LogOut,
+  Users,
+  Globe,
+  Database,
+  Check,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth, TEST_ACCOUNTS } from "@/context/AuthContext";
+import { useUserData } from "@/context/UserDataContext";
 import { fetchSearch } from "@/lib/metadata/client";
-import { MediaItem } from "@/lib/types";
+import { MediaItem, SupportedLanguage } from "@/lib/types";
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -29,10 +36,20 @@ interface NavbarProps {
 
 export function Navbar({ onToggleSidebar }: NavbarProps) {
   const router = useRouter();
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, setTheme } = useTheme();
+  const {
+    user,
+    isAuthenticated,
+    openAuthModal,
+    signOut,
+    switchTestAccount,
+    updateProfile,
+    configStatus,
+  } = useAuth();
+  const { watchlist, continueWatching } = useUserData();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [autocompleteResults, setAutocompleteResults] = useState<MediaItem[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -59,15 +76,12 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
     }
 
     const timer = setTimeout(async () => {
-      setIsSearching(true);
       try {
         const data = await fetchSearch(searchQuery.trim(), "all", 1);
         setAutocompleteResults((data.results || []).slice(0, 5));
         setShowDropdown(true);
       } catch {
         setAutocompleteResults([]);
-      } finally {
-        setIsSearching(false);
       }
     }, 300);
 
@@ -94,6 +108,21 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
       setShowDropdown(false);
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsSearchOpenMobile(false);
+    }
+  };
+
+  const handleAccountSwitch = async (key: "alex" | "jordan") => {
+    await switchTestAccount(key);
+    const target = TEST_ACCOUNTS[key];
+    if (target?.preferredTheme) {
+      setTheme(target.preferredTheme);
+    }
+    setIsProfileOpen(false);
+  };
+
+  const handleLanguageChange = async (lang: SupportedLanguage) => {
+    if (user) {
+      await updateProfile({ preferredLanguage: lang });
     }
   };
 
@@ -175,6 +204,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                   >
                     <div className="w-9 h-12 rounded-lg bg-surface-hover shrink-0 overflow-hidden">
                       {item.posterUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
                         <img src={item.posterUrl} alt={item.title} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -214,8 +244,8 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
           )}
         </div>
 
-        {/* Right: Actions & Profile */}
-        <div className="flex items-center gap-2">
+        {/* Right: Actions, Theme Switcher & Profile Dropdown */}
+        <div className="flex items-center gap-2.5">
           {/* Mobile Search Toggle */}
           <button
             onClick={() => setIsSearchOpenMobile(!isSearchOpenMobile)}
@@ -227,7 +257,13 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
 
           {/* Theme Switcher Toggle */}
           <button
-            onClick={toggleTheme}
+            onClick={() => {
+              const next = theme === "dark" ? "light" : "dark";
+              toggleTheme();
+              if (user) {
+                updateProfile({ preferredTheme: next });
+              }
+            }}
             aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
             className="p-2 rounded-xl text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors"
           >
@@ -238,82 +274,202 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
             )}
           </button>
 
-          {/* Notifications Demo Button */}
-          <button
-            aria-label="Notifications"
-            className="p-2 rounded-xl text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors relative hidden sm:flex"
-            onClick={() => alert("VYBE Phase 2 Notice: Notifications will sync in Phase 4.")}
-          >
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
-          </button>
+          {/* User Profile / Sign In Menu */}
+          {isAuthenticated && user ? (
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center gap-2 p-1 rounded-full hover:ring-2 hover:ring-brand-500/50 transition-all"
+                aria-label="User Profile Menu"
+                aria-expanded={isProfileOpen}
+              >
+                {user.avatarUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.username}
+                    className="w-8 h-8 rounded-full object-cover ring-2 ring-brand-500/30"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-600 to-purple-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-surface-border">
+                    {user.username.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+              </button>
 
-          {/* User Profile Menu */}
-          <div className="relative" ref={profileRef}>
+              {/* Profile Dropdown */}
+              {isProfileOpen && (
+                <div className="absolute right-0 mt-2 w-72 rounded-2xl glass-panel shadow-2xl p-2 z-50 animate-fadeIn border border-surface-border bg-surface text-foreground">
+                  {/* User Header */}
+                  <div className="p-3 border-b border-surface-border/60">
+                    <div className="flex items-center gap-3">
+                      {user.avatarUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={user.avatarUrl}
+                          alt={user.username}
+                          className="w-10 h-10 rounded-full object-cover border border-brand-500/40"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-brand-600/20 text-brand-400 flex items-center justify-center font-bold text-sm">
+                          {user.username.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-bold text-foreground truncate">{user.username}</p>
+                        <p className="text-xs text-foreground-muted truncate">{user.email || "No email"}</p>
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-brand-500/10 text-brand-400 mt-0.5">
+                          VYBE Member
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Primary Navigation Links */}
+                  <div className="py-1">
+                    <Link
+                      href="/watchlist"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 text-xs font-medium text-foreground-muted hover:text-foreground hover:bg-surface-hover rounded-xl transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Bookmark className="w-4 h-4 text-brand-400" />
+                        <span>My Watchlist</span>
+                      </div>
+                      {watchlist.length > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/20 text-brand-400">
+                          {watchlist.length}
+                        </span>
+                      )}
+                    </Link>
+
+                    <Link
+                      href="/history"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center justify-between px-3 py-2 text-xs font-medium text-foreground-muted hover:text-foreground hover:bg-surface-hover rounded-xl transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <History className="w-4 h-4 text-indigo-400" />
+                        <span>Continue Watching</span>
+                      </div>
+                      {continueWatching.length > 0 && (
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-400">
+                          {continueWatching.length}
+                        </span>
+                      )}
+                    </Link>
+
+                    <Link
+                      href="/browse"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-foreground-muted hover:text-foreground hover:bg-surface-hover rounded-xl transition-colors"
+                    >
+                      <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
+                      <span>Browse All Titles</span>
+                    </Link>
+                  </div>
+
+                  {/* Preferences Section: Audio Language */}
+                  <div className="py-2 px-3 border-t border-surface-border/60">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-foreground-muted mb-1.5">
+                      <span className="flex items-center gap-1.5">
+                        <Globe className="w-3.5 h-3.5 text-brand-400" />
+                        Audio Language
+                      </span>
+                      <span className="text-[10px] uppercase font-mono text-brand-400">
+                        {user.preferredLanguage}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-1">
+                      {(["eng", "hindi", "french"] as SupportedLanguage[]).map((lang) => (
+                        <button
+                          key={lang}
+                          type="button"
+                          onClick={() => handleLanguageChange(lang)}
+                          className={`py-1 text-[11px] rounded-lg border text-center transition-colors ${
+                            user.preferredLanguage === lang
+                              ? "bg-brand-600 text-white border-brand-500 font-semibold"
+                              : "bg-surface-hover border-surface-border text-foreground-muted hover:text-foreground"
+                          }`}
+                        >
+                          {lang === "eng" ? "English" : lang === "hindi" ? "Hindi" : "French"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Multi-Account Isolation Switcher (1-Click Switch) */}
+                  <div className="py-2 px-3 border-t border-surface-border/60 bg-surface-hover/30">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-foreground-muted mb-1.5">
+                      <span className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-brand-400" />
+                        Switch Test Account
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleAccountSwitch("alex")}
+                        className={`p-1.5 rounded-lg border text-left text-[11px] flex items-center justify-between transition-colors ${
+                          user.id === TEST_ACCOUNTS.alex.id
+                            ? "bg-brand-500/20 border-brand-500/40 text-foreground font-semibold"
+                            : "bg-surface-hover border-surface-border text-foreground-muted hover:text-foreground"
+                        }`}
+                      >
+                        <span className="truncate">Alex (Dark)</span>
+                        {user.id === TEST_ACCOUNTS.alex.id && (
+                          <Check className="w-3 h-3 text-brand-400" />
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAccountSwitch("jordan")}
+                        className={`p-1.5 rounded-lg border text-left text-[11px] flex items-center justify-between transition-colors ${
+                          user.id === TEST_ACCOUNTS.jordan.id
+                            ? "bg-brand-500/20 border-brand-500/40 text-foreground font-semibold"
+                            : "bg-surface-hover border-surface-border text-foreground-muted hover:text-foreground"
+                        }`}
+                      >
+                        <span className="truncate">Jordan (Light)</span>
+                        {user.id === TEST_ACCOUNTS.jordan.id && (
+                          <Check className="w-3 h-3 text-brand-400" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Backend Status Footer */}
+                  <div className="p-2 border-t border-surface-border/60 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-[10px] text-foreground-muted">
+                      <Database className="w-3 h-3 text-brand-400" />
+                      <span>{configStatus.isConfigured ? "Supabase Live" : "Demo Mode"}</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        signOut();
+                        setIsProfileOpen(false);
+                      }}
+                      className="flex items-center gap-1 text-[11px] text-red-400 hover:text-red-300 px-2 py-1 rounded-lg hover:bg-red-500/10 transition-colors"
+                    >
+                      <LogOut className="w-3 h-3" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
             <button
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-2 p-1.5 rounded-full hover:ring-2 hover:ring-brand-500/50 transition-all"
-              aria-label="User Profile Menu"
-              aria-expanded={isProfileOpen}
+              onClick={openAuthModal}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-brand-500/20 transition-all hover:scale-105"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-600 to-purple-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-surface-border">
-                VY
-              </div>
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In</span>
             </button>
-
-            {/* Profile Dropdown */}
-            {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-64 rounded-2xl glass-panel shadow-2xl p-2 z-50 animate-fadeIn border border-surface-border">
-                <div className="px-3 py-2 border-b border-surface-border/60">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-brand-600/20 text-brand-400 flex items-center justify-center font-bold text-xs">
-                      GS
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Guest Explorer</p>
-                      <p className="text-xs text-brand-400 font-mono">Phase 2 Active</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="py-1">
-                  <Link
-                    href="/watchlist"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 text-sm text-foreground-muted hover:text-foreground hover:bg-surface-hover rounded-xl transition-colors"
-                  >
-                    <Bookmark className="w-4 h-4 text-brand-400" />
-                    <span>My Watchlist</span>
-                  </Link>
-                  <Link
-                    href="/history"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 text-sm text-foreground-muted hover:text-foreground hover:bg-surface-hover rounded-xl transition-colors"
-                  >
-                    <History className="w-4 h-4 text-indigo-400" />
-                    <span>Continue Watching</span>
-                  </Link>
-                  <Link
-                    href="/browse"
-                    onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2 text-sm text-foreground-muted hover:text-foreground hover:bg-surface-hover rounded-xl transition-colors"
-                  >
-                    <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
-                    <span>Browse All Titles</span>
-                  </Link>
-                </div>
-
-                <div className="pt-2 border-t border-surface-border/60 px-1">
-                  <div className="p-2.5 rounded-xl bg-brand-500/10 text-xs text-foreground-muted">
-                    <p className="font-semibold text-brand-400 mb-0.5">Metadata Status</p>
-                    <p className="text-[11px] leading-tight">
-                      To enable TMDB live search and trending, set TMDB_API_KEY in .env.local.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 

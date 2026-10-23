@@ -2,10 +2,11 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
-import { X, Play, Star, Clock, Calendar, Bookmark, Share2 } from "lucide-react";
+import { X, Play, Star, Bookmark, Check } from "lucide-react";
 import { MediaItem } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { useUserData } from "@/context/UserDataContext";
 
 interface MediaModalProps {
   media: MediaItem | null;
@@ -13,6 +14,8 @@ interface MediaModalProps {
 }
 
 export function MediaModal({ media, onClose }: MediaModalProps) {
+  const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useUserData();
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -28,6 +31,24 @@ export function MediaModal({ media, onClose }: MediaModalProps) {
   }, [media, onClose]);
 
   if (!media) return null;
+
+  const isBookmarked = isInWatchlist(media.tmdbId, media.type);
+
+  const toggleWatchlist = async () => {
+    if (isBookmarked) {
+      await removeFromWatchlist(media.tmdbId, media.type);
+    } else {
+      await addToWatchlist({
+        tmdbId: media.tmdbId,
+        mediaType: media.type,
+        title: media.title,
+        posterPath: media.posterUrl,
+        backdropPath: media.backdropUrl,
+        voteAverage: media.rating,
+        releaseYear: media.releaseYear,
+      });
+    }
+  };
 
   const watchUrl = `/watch/${media.type}/${media.tmdbId}`;
 
@@ -53,6 +74,7 @@ export function MediaModal({ media, onClose }: MediaModalProps) {
         {/* Modal Header with Backdrop */}
         <div className="relative h-64 sm:h-80 w-full shrink-0 overflow-hidden bg-black">
           {media.backdropUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={media.backdropUrl}
               alt={media.title}
@@ -88,8 +110,27 @@ export function MediaModal({ media, onClose }: MediaModalProps) {
               </Button>
             </Link>
 
+            <Button
+              size="lg"
+              variant={isBookmarked ? "primary" : "secondary"}
+              onClick={toggleWatchlist}
+              className={isBookmarked ? "bg-brand-600 text-white" : ""}
+            >
+              {isBookmarked ? (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  In Watchlist
+                </>
+              ) : (
+                <>
+                  <Bookmark className="w-4 h-4 mr-2" />
+                  + Watchlist
+                </>
+              )}
+            </Button>
+
             <Link href={`/${media.type === "tv" ? "tv" : "movie"}/${media.tmdbId}`} onClick={onClose}>
-              <Button size="lg" variant="secondary">
+              <Button size="lg" variant="ghost">
                 Full Details Page
               </Button>
             </Link>

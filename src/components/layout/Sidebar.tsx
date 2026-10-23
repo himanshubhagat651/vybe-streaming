@@ -12,11 +12,10 @@ import {
   History,
   Sparkles,
   Compass,
-  X,
-  PlayCircle,
 } from "lucide-react";
 import { DEMO_GENRES } from "@/lib/demoData";
 import { cn } from "@/lib/utils";
+import { useUserData } from "@/context/UserDataContext";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -25,6 +24,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { watchlist, history } = useUserData();
 
   const mainLinks = [
     { name: "Home", href: "/", icon: Home },
@@ -34,8 +34,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   ];
 
   const libraryLinks = [
-    { name: "Watchlist", href: "/watchlist", icon: Bookmark },
-    { name: "History", href: "/history", icon: History },
+    { name: "Watchlist", href: "/watchlist", icon: Bookmark, badge: watchlist.length },
+    { name: "History", href: "/history", icon: History, badge: history.length },
   ];
 
   return (
@@ -125,7 +125,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     if (window.innerWidth < 768) onClose();
                   }}
                   className={cn(
-                    "flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                    "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
                     isActive
                       ? "bg-brand-600/15 text-brand-400 font-semibold"
                       : "text-foreground-muted hover:text-foreground hover:bg-surface-hover",
@@ -133,20 +133,27 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   )}
                   title={!isOpen ? item.name : undefined}
                 >
-                  <Icon
-                    className={cn(
-                      "w-5 h-5 shrink-0 transition-transform group-hover:scale-110",
-                      isActive ? "text-brand-500" : "text-foreground-muted"
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      "truncate transition-opacity duration-200",
-                      !isOpen && "md:text-[10px] md:font-normal"
-                    )}
-                  >
-                    {item.name}
-                  </span>
+                  <div className="flex items-center gap-3.5">
+                    <Icon
+                      className={cn(
+                        "w-5 h-5 shrink-0 transition-transform group-hover:scale-110",
+                        isActive ? "text-brand-500" : "text-foreground-muted"
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        "truncate transition-opacity duration-200",
+                        !isOpen && "md:text-[10px] md:font-normal"
+                      )}
+                    >
+                      {item.name}
+                    </span>
+                  </div>
+                  {isOpen && item.badge !== undefined && item.badge > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/20 text-brand-400">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -177,14 +184,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </div>
               </div>
 
-              {/* Demo Badge Box */}
+              {/* Phase 4 Status Box */}
               <div className="p-3 rounded-2xl bg-gradient-to-br from-brand-600/10 to-indigo-600/5 border border-brand-500/20 text-xs">
                 <div className="flex items-center gap-1.5 font-semibold text-brand-400 mb-1">
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Phase 1 Frontend</span>
+                  <span>Phase 4 Persistence</span>
                 </div>
                 <p className="text-[11px] text-foreground-muted leading-relaxed">
-                  Interactive UI running with local demo data. ScreenScape player ready.
+                  Supabase Auth & Multi-Account Isolation active. Watchlist & History sync per user.
                 </p>
               </div>
             </>
