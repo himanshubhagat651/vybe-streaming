@@ -5,7 +5,6 @@ import { Navbar } from "./Navbar";
 import { Sidebar } from "./Sidebar";
 import { MobileNav } from "./MobileNav";
 import { Footer } from "./Footer";
-import { ProviderBanner } from "./ProviderBanner";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -27,7 +26,6 @@ export function AppShell({ children }: AppShellProps) {
     <div className="flex flex-col min-h-screen">
       {/* Top Navbar */}
       <Navbar onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-      <ProviderBanner />
 
       {/* Main Layout Area */}
       <div className="flex flex-1 relative">
