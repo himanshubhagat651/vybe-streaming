@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { fetchProviderStatus } from "@/lib/metadata/client";
 import { ProviderStatus } from "@/lib/types";
-import { AlertCircle, CheckCircle, Database, X } from "lucide-react";
+import { AlertCircle, CheckCircle, Database, X, Sparkles } from "lucide-react";
 
 export function ProviderBanner() {
   const [status, setStatus] = useState<ProviderStatus | null>(null);
@@ -21,7 +21,10 @@ export function ProviderBanner() {
         <div className="flex items-center gap-2 max-w-7xl mx-auto w-full">
           <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
           <span>
-            <strong>Live Catalog Active:</strong> Connected to official The Movie Database (TMDB) API v3/v4.
+            <strong>Live {status.providerName} Catalog Active:</strong>{" "}
+            {status.providerName === "ScreenScape"
+              ? "Synchronized with official ScreenScape movies, series & search index."
+              : "Connected to official The Movie Database (TMDB) API v3/v4."}
           </span>
         </div>
       </div>

@@ -65,7 +65,7 @@ export interface PaginatedResult<T> {
 }
 
 export interface ProviderStatus {
-  providerName: "TMDB" | "Mock";
+  providerName: "TMDB" | "Mock" | "ScreenScape";
   isConfigured: boolean;
   message?: string;
 }

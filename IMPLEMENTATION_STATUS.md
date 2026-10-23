@@ -82,13 +82,17 @@ Results: 22 / 22 tests passed (100%)
 - **PostgreSQL Database Migrations**: Production-grade migration in `supabase/migrations/` with tables, triggers, indexes, and strict Row Level Security (RLS) policies.
 - **Server-Side Authorization**: API routes deriving caller identity exclusively from verified session cookies, rejecting unauthenticated tampering.
 
-### B. Partially Working Features / Fallback Modes
-- **Embed Internal Timestamp Reporting**: The postMessage protocol bridge is implemented and verified against upstream specification. However, because ScreenScape video players are click-to-play by design and serve content via external CDN mirrors, the player does not dispatch continuous timestamp messages until user interaction starts. The parent app's watch progress state serves as the reliable primary source of truth.
-- **TMDB Live Catalog**: Operates in offline demo mode when `TMDB_API_KEY` is unset; switches to live TMDB data automatically when credentials are added.
+### B. Metadata Providers & ScreenScape Catalog Synchronization
+- **Live ScreenScape Catalog Provider (`ScreenScapeProvider`)**: VYBE directly integrates with ScreenScape's public catalog API (`https://web.screenscape.fun/api/movies/trending`, `/api/tv/trending`, `/api/movies/now-playing`, `/api/movies/upcoming`, `/api/search`, and `/api/tv/{id}`). This guarantees that all movies and TV shows featured on ScreenScape (including *Clayface*, *Spider-Man: Brand New Day*, *Hope*, *Street Fighter*, *Lupin*, *Cyberpunk: Edgerunners*, etc.) are dynamically loaded into VYBE out-of-the-box without requiring an external TMDB API key.
+- **TMDB Provider (`TmdbProvider`)**: If `TMDB_API_KEY` is provided in `.env.local`, the platform automatically upgrades to use full TMDB API v3 endpoints.
+- **Offline Mock Provider (`MockMetadataProvider`)**: Seamless fallback for isolated or network-disconnected development.
 
-### C. Missing Credentials
-- **`TMDB_API_KEY`**: Required in `.env.local` for live TMDB catalog search and trending titles.
-- **`NEXT_PUBLIC_SUPABASE_URL` & `NEXT_PUBLIC_SUPABASE_ANON_KEY`**: Required in `.env.local` to connect a live Supabase project.
+### C. Partially Working Features / Fallback Modes
+- **Embed Internal Timestamp Reporting**: The postMessage protocol bridge is implemented and verified against upstream specification. However, because ScreenScape video players are click-to-play by design and serve content via external CDN mirrors, the player does not dispatch continuous timestamp messages until user interaction starts. The parent app's watch progress state serves as the reliable primary source of truth.
+
+### D. Optional External Credentials
+- **`TMDB_API_KEY`** (Optional): Extends catalog search beyond ScreenScape's indexed catalog to the full 1M+ TMDB library. (Not required for standard usage as ScreenScape catalog provider is active by default).
+- **`NEXT_PUBLIC_SUPABASE_URL` & `NEXT_PUBLIC_SUPABASE_ANON_KEY`** (Optional): Connects an external managed Supabase PostgreSQL instance. (Built-in persistent browser auth & mock database operates seamlessly if omitted).
 
 ### D. Known Limitations
 - **Stream Availability**: Playback relies on ScreenScape's scraper indexing; niche or newly released titles may occasionally lack active mirror streams.

@@ -1,5 +1,6 @@
 import { MetadataProvider } from "./provider";
 import { TmdbProvider } from "./tmdb";
+import { ScreenScapeProvider } from "./screenscape";
 import { MockMetadataProvider } from "./mock";
 
 export function getMetadataProvider(): MetadataProvider {
@@ -7,9 +8,11 @@ export function getMetadataProvider(): MetadataProvider {
   if (tmdb.isConfigured()) {
     return tmdb;
   }
-  return new MockMetadataProvider();
+  // Default to live ScreenScape catalog & search provider
+  return new ScreenScapeProvider();
 }
 
 export * from "./provider";
 export * from "./tmdb";
+export * from "./screenscape";
 export * from "./mock";
