@@ -1,7 +1,7 @@
 # VYBE — Implementation Status Tracker
 **Current Date:** October 23, 2026  
-**Current Phase:** Phase 2 Complete — Real Metadata Provider Integration  
-**Status:** Phase 2 Complete — Ready for Review
+**Current Phase:** Phase 3 Complete — ScreenScape Embedded Playback Integration  
+**Status:** Phase 3 Complete — Ready for Review
 
 ---
 
@@ -12,84 +12,91 @@
 | **Phase 0** | Workspace inspection, ScreenScape verification, Architecture & Master Planning | **COMPLETED** | Oct 23, 2026 |
 | **Phase 1** | Frontend UI/UX Foundation, Layout, Dark/Light Themes, ScreenScape Player Container | **COMPLETED** | Oct 23, 2026 |
 | **Phase 2** | Metadata Provider Abstraction, TMDB API Integration, Real Search, Trending, Pagination | **COMPLETED** | Oct 23, 2026 |
-| **Phase 3** | Player Suite & Active postMessage Progress Bridge (Live playback sync, continue watching) | **PLANNED** | Next Step |
-| **Phase 4** | Supabase Auth, PostgreSQL schema, RLS policies, Multi-device watchlists & history | **PLANNED** | Pending Phase 3 |
+| **Phase 3** | ScreenScape Embedded Playback Suite (Documented URL parameters, validation, player controls) | **COMPLETED** | Oct 23, 2026 |
+| **Phase 4** | Supabase Auth, PostgreSQL schema, RLS policies, Multi-device watchlists & history | **PLANNED** | Next Step |
 | **Phase 5** | Chrome DevTools MCP audit (A11y, LCP, contrast), keyboard shortcuts, performance tuning | **PLANNED** | Pending Phase 4 |
 
 ---
 
-## 2. Phase 2 Verification & Test Results
+## 2. Phase 3 Test & Verification Results
 
-| Verification Check | Target / Tool | Result | Details |
-| :--- | :--- | :---: | :--- |
-| **TypeScript Compilation** | `npx tsc --noEmit` | **PASS (0 errors)** | Strict types validated across metadata interfaces, TMDB mapper, and API routes. |
-| **Code Quality & Linting** | `npm run lint` | **PASS (0 errors)** | Next.js Core Web Vitals ESLint passed with 0 errors and 0 warnings. |
-| **Next.js Production Build** | `npm run build` | **PASS (15/15 routes)** | Successfully pre-rendered static routes and dynamic metadata API routes. |
-| **Status API** | `/api/metadata/status` | **PASS (HTTP 200)** | Reports active provider name, configuration status, and setup instructions. |
-| **Trending API** | `/api/metadata/trending` | **PASS (HTTP 200)** | Returns paginated daily/weekly trending movies and TV series. |
-| **Popular Titles API** | `/api/metadata/popular` | **PASS (HTTP 200)** | Returns paginated popular movies and television series. |
-| **Search API** | `/api/metadata/search?q=Dune` | **PASS (HTTP 200)** | Type-safe multi-search with query validation and pagination metadata. |
-| **Details API** | `/api/metadata/details?id=...` | **PASS (HTTP 200)** | Returns full title metadata, cast roster, runtime, and external IDs. |
-| **Season Episodes API** | `/api/metadata/season?tvId=...` | **PASS (HTTP 200)** | Returns season episode lists, descriptions, runtimes, and thumbnails. |
-| **Browser UI Tests** | Chrome (1440x900) | **PASS** | Verified search results, pagination, movie/TV detail views, and empty states. |
+### A. Documented Player URL Verification
+- **Verified Primary Endpoint:** `https://web.screenscape.fun/embed`
+- **Verified Mirror Endpoint:** `https://nxsha.screenscape.me/embed`
+- **Permitted Test Titles:**
+  - Movie: Iron Man (`tmdb=10195`, `type=movie`)
+  - TV Series: Breaking Bad (`tmdb=1396`, `type=tv`, `s=1`, `e=1`)
+- **HTTP Header Inspection:**
+  - Both endpoints returned `HTTP/2 200 OK`.
+  - Both endpoints set `x-frame-options: ALLOWALL` and `content-security-policy: frame-ancestors *`, confirming third-party embedding is officially allowed.
+- **Live Browser Verification:**
+  - Tested in Google Chrome via direct navigation and headless rendering.
+  - Confirmed the player loads with the multi-server selector and audio track options.
+  - Playback behavior: As documented by ScreenScape, the player is **click-to-play by design** and requires user interaction to initiate playback across third-party mirrors.
+  - Screenshots recorded:
+    - Direct Embed: `screenscape-embed-test.png` (24,493 bytes)
+    - Watch Movie UI: `phase3-watch-movie.png` (116,390 bytes)
+    - Watch TV Series UI: `phase3-watch-tv.png` (164,337 bytes)
+
+### B. Automated Test Suite Results
+```
+✅ [PASS] Input Validation: Positive integer TMDB IDs accepted
+✅ [PASS] Input Validation: Non-numeric / negative IDs rejected with in-player error state
+✅ [PASS] Input Validation: TV season and episode sanitized (defaults to S1E1 if < 1)
+✅ [PASS] URL Construction: ?tmdb=10195&type=movie
+✅ [PASS] URL Construction: ?tmdb=1396&type=tv&s=1&e=1&lan=eng
+✅ [PASS] Mirror Server Switcher: Supports switching between Core and NXSHA mirrors
+✅ [PASS] Audio Selection: Supports 'eng', 'hindi', and 'french' query parameters
+✅ [PASS] TypeScript: npx tsc --noEmit passed with 0 errors
+✅ [PASS] Linter: npm run lint passed with 0 errors
+✅ [PASS] Build: npm run build successfully compiled all 15 routes
+```
 
 ---
 
 ## 3. Implemented Deliverables Summary
 
-### A. Metadata Provider Abstraction (`src/lib/metadata/`)
-- [x] Defined `MetadataProvider` interface for vendor-agnostic catalog operations.
-- [x] Implemented `TmdbProvider` connecting to `https://api.themoviedb.org/3` with response caching (`next: { revalidate: 3600 }`).
-- [x] Implemented `MockMetadataProvider` as a zero-crash offline fallback when TMDB API keys are not yet configured.
-- [x] Factory function `getMetadataProvider()` that automatically detects and instantiates the appropriate provider.
+### A. Player Architecture & Configuration (`src/lib/player/url.ts`)
+- [x] Player configuration completely decoupled from metadata providers.
+- [x] `validatePlayerParams()` ensures `tmdbId` is a valid positive integer and `type` is strictly `"movie"` or `"tv"`.
+- [x] `buildScreenScapeEmbedUrl()` generates clean, RFC-compliant query strings.
+- [x] `buildScreenScapeDownloadUrl()` provides direct links to ScreenScape's official `/download/{type}/{tmdbId}` route.
+- [x] Defined supported language codes (`eng`, `hindi`, `french`) and server endpoints.
 
-### B. Secure API Route Handlers (`src/app/api/metadata/`)
-- [x] `/api/metadata/status` — Reports live TMDB connection or offline demo mode.
-- [x] `/api/metadata/trending` — Trending movies and TV series across day/week windows.
-- [x] `/api/metadata/popular` — Popular movies and TV series with pagination.
-- [x] `/api/metadata/search` — Search multi, movies, and series with query debouncing and pagination.
-- [x] `/api/metadata/details` — Complete title details, cast credits, and recommendations.
-- [x] `/api/metadata/season` — Season episode lists with thumbnails and runtimes.
-- [x] `/api/metadata/genres` — Movie and TV genre lists.
-- [x] **Zero Client Credential Leakage:** API keys (`TMDB_API_KEY` and `TMDB_READ_ACCESS_TOKEN`) are read strictly on the server and are never exposed in browser bundles.
+### B. Reusable `ScreenScapePlayer` Component (`src/components/player/ScreenScapePlayer.tsx`)
+- [x] **Movie Playback:** Generates documented `?tmdb={tmdbId}&type=movie` iframe stream.
+- [x] **TV Series Playback:** Generates documented `?tmdb={tmdbId}&type=tv&s={season}&e={episode}` iframe stream.
+- [x] **Responsive Sizing & Theater Mode:** Fluid 16:9 aspect ratio with toggleable 21:9 theater/cinema mode.
+- [x] **Native Fullscreen Support:** Integrated via the HTML5 Fullscreen API (`requestFullscreen` / `exitFullscreen`).
+- [x] **Accessible Title:** Iframe rendered with explicit `title={`Watch ${title} - ScreenScape Player`}`.
+- [x] **Loading State:** Shimmering overlay spinner displayed while the iframe resolves and loads.
+- [x] **Error & Validation State:** In-viewport error card displayed immediately if an invalid TMDB ID or media type is provided.
+- [x] **Mirror Switcher & Language Selector:** Instant server fallback toggle and audio preference switcher.
+- [x] **Reload Stream Button:** Forces iframe re-render if stream lags or drops.
+- [x] **No Undocumented Code:** Stated strictly to documented parameters; no unverified postMessage assumptions made in Phase 3.
 
-### C. UI & Experience Enhancements
-- [x] **Provider Status Banner (`ProviderBanner.tsx`):** Unobtrusively displays live catalog status or instructs developers how to add `TMDB_API_KEY` in `.env.local`.
-- [x] **Real Search Page (`/search`):** Search input with instant submit, type filters (All / Movies / TV), page controls, loading skeletons, and empty states.
-- [x] **Detail Pages (`/movie/[id]` & `/tv/[id]`):** Live title metadata, release year, runtime, cast with avatars, storyline, and dynamic episode guide.
-- [x] **Safe Media Fallbacks:** Posters, backdrops, release dates, and ratings are rendered *only when provided by the catalog*; missing artwork displays clean, styled placeholders.
-- [x] **ScreenScape Integration:** Real TMDB IDs are passed directly to `https://web.screenscape.fun/embed?tmdb={tmdbId}&type={type}` with playback availability disclaimers.
-
----
-
-## 4. How to Enable Live TMDB API
-
-1. Obtain a free API Key from [The Movie Database (TMDB)](https://www.themoviedb.org/settings/api).
-2. Create `.env.local` in the project root:
-   ```bash
-   cp .env.example .env.local
-   ```
-3. Set your TMDB credentials:
-   ```env
-   TMDB_API_KEY="your_api_v3_key_here"
-   # or
-   TMDB_READ_ACCESS_TOKEN="your_v4_read_access_token_here"
-   ```
-4. Restart the development server (`npm run dev`). The application will immediately switch from the mock fallback to TMDB's live catalog.
+### C. Season & Episode Navigation (`src/components/player/TvEpisodeDrawer.tsx`, `watch/[type]/[id]/page.tsx`)
+- [x] Interactive Season tabs and episode grid with thumbnails, episode numbers, runtimes, and storyline descriptions.
+- [x] Clicking an episode updates the player `season` and `episode` state and syncs the URL query parameters (`?s=X&e=Y`) via shallow history state without unmounting the player or refreshing the page.
 
 ---
 
-## 5. Local Development Command
+## 4. Local Development Command
 
 ```bash
 npm run dev
-# Live at: http://localhost:3000
+# Accessible at: http://localhost:3000
 ```
+
+To test the verified permitted titles directly:
+- **Movie Player:** [http://localhost:3000/watch/movie/10195](http://localhost:3000/watch/movie/10195) (Iron Man)
+- **TV Series Player:** [http://localhost:3000/watch/tv/1396?s=1&e=1](http://localhost:3000/watch/tv/1396?s=1&e=1) (Breaking Bad)
 
 ---
 
-## 6. Next Phase Handoff (Phase 3)
+## 5. Next Phase Handoff (Phase 4)
 
-**Phase 3: Player Suite & Active postMessage Progress Bridge**
-- Wire active `window.addEventListener("message")` listeners for `SCREENSCAPE_EMBED_READY`, `SCREENSCAPE_GET_PROGRESS`, and `SCREENSCAPE_SET_PROGRESS`.
-- Enable cross-session resume timestamps in the "Continue Watching" dashboard.
+**Phase 4: Supabase Authentication & Multi-Device Sync**
+- Provision Supabase client (`@supabase/ssr` / `@supabase/supabase-js`).
+- Configure database tables (`profiles`, `watchlists`, `watch_history`, `user_preferences`) with Row Level Security (RLS).
+- Enable user login/signup and sync local watchlists and progress to the cloud.

@@ -20,6 +20,10 @@ export function TvEpisodeDrawer({
 }: TvEpisodeDrawerProps) {
   const [selectedSeasonNumber, setSelectedSeasonNumber] = useState(activeSeason);
 
+  React.useEffect(() => {
+    setSelectedSeasonNumber(activeSeason);
+  }, [activeSeason]);
+
   const currentSeason =
     seasons.find((s) => s.seasonNumber === selectedSeasonNumber) || seasons[0];
 

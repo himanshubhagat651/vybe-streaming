@@ -85,6 +85,12 @@ export default function WatchPage() {
   const handleEpisodeChange = (s: number, e: number) => {
     setActiveSeason(s);
     setActiveEpisode(e);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("s", String(s));
+      url.searchParams.set("e", String(e));
+      window.history.replaceState(null, "", url.toString());
+    }
     if (s !== activeSeason) {
       fetchSeasonEpisodes(rawId, s).then((data) => setActiveSeasonData(data)).catch(() => {});
     }
