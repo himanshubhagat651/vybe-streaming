@@ -9,30 +9,38 @@ import {
   Moon,
   Menu,
   Bell,
-  User,
   Bookmark,
   History,
-  Sparkles,
   SlidersHorizontal,
   X,
   PlayCircle,
+  Star,
+  Film,
+  Tv,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
-import { Button } from "@/components/ui/Button";
+import { fetchSearch } from "@/lib/metadata/client";
+import { MediaItem } from "@/lib/types";
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
   isSidebarOpen?: boolean;
 }
 
-export function Navbar({ onToggleSidebar, isSidebarOpen }: NavbarProps) {
+export function Navbar({ onToggleSidebar }: NavbarProps) {
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
+  const [autocompleteResults, setAutocompleteResults] = useState<MediaItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpenMobile, setIsSearchOpenMobile] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
   const profileRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -42,11 +50,38 @@ export function Navbar({ onToggleSidebar, isSidebarOpen }: NavbarProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close dropdown on click outside
+  // Debounced search for live autocomplete
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setAutocompleteResults([]);
+      setShowDropdown(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const data = await fetchSearch(searchQuery.trim(), "all", 1);
+        setAutocompleteResults((data.results || []).slice(0, 5));
+        setShowDropdown(true);
+      } catch {
+        setAutocompleteResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Click outside listener for search & profile
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setIsProfileOpen(false);
+      }
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -56,6 +91,7 @@ export function Navbar({ onToggleSidebar, isSidebarOpen }: NavbarProps) {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      setShowDropdown(false);
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsSearchOpenMobile(false);
     }
@@ -95,14 +131,17 @@ export function Navbar({ onToggleSidebar, isSidebarOpen }: NavbarProps) {
           </Link>
         </div>
 
-        {/* Center: Search Bar (Desktop) */}
-        <div className="hidden md:flex flex-1 max-w-xl mx-4">
+        {/* Center: Search Bar with Autocomplete Dropdown (Desktop) */}
+        <div className="hidden md:flex flex-1 max-w-xl mx-4 relative" ref={searchContainerRef}>
           <form onSubmit={handleSearchSubmit} className="relative w-full">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search movies, TV series, actors, genres... (Press Enter)"
+              onFocus={() => {
+                if (autocompleteResults.length > 0) setShowDropdown(true);
+              }}
+              placeholder="Search movies, TV series, actors... (Press Enter)"
               className="w-full h-10 pl-10 pr-24 rounded-full bg-surface/80 border border-surface-border text-sm text-foreground placeholder:text-foreground-muted/60 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all shadow-inner"
             />
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />
@@ -119,6 +158,60 @@ export function Navbar({ onToggleSidebar, isSidebarOpen }: NavbarProps) {
               </button>
             </div>
           </form>
+
+          {/* Autocomplete Dropdown Popover */}
+          {showDropdown && autocompleteResults.length > 0 && (
+            <div className="absolute top-12 inset-x-0 rounded-2xl glass-panel shadow-2xl border border-surface-border p-2 z-50 animate-fadeIn">
+              <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground-muted/60 border-b border-surface-border/60">
+                Top Matches
+              </div>
+              <div className="py-1 space-y-1">
+                {autocompleteResults.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/watch/${item.type}/${item.tmdbId}`}
+                    onClick={() => setShowDropdown(false)}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-surface-hover transition-colors group"
+                  >
+                    <div className="w-9 h-12 rounded-lg bg-surface-hover shrink-0 overflow-hidden">
+                      {item.posterUrl ? (
+                        <img src={item.posterUrl} alt={item.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          {item.type === "tv" ? <Tv className="w-4 h-4 text-foreground-muted" /> : <Film className="w-4 h-4 text-foreground-muted" />}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] uppercase font-mono font-bold text-brand-400">
+                          {item.type === "tv" ? "TV" : "Movie"}
+                        </span>
+                        {item.rating > 0 && (
+                          <span className="flex items-center gap-0.5 text-[10px] text-amber-400 font-semibold">
+                            <Star className="w-2.5 h-2.5 fill-current" />
+                            {item.rating.toFixed(1)}
+                          </span>
+                        )}
+                        {item.releaseYear && (
+                          <span className="text-[10px] text-foreground-muted">{item.releaseYear}</span>
+                        )}
+                      </div>
+                      <p className="text-sm font-semibold text-foreground truncate group-hover:text-brand-400">
+                        {item.title}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+              <button
+                onClick={handleSearchSubmit}
+                className="w-full py-2 text-center text-xs font-semibold text-brand-400 hover:text-brand-300 border-t border-surface-border/60 mt-1 block"
+              >
+                See all results for &ldquo;{searchQuery}&rdquo; &rarr;
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right: Actions & Profile */}
@@ -149,7 +242,7 @@ export function Navbar({ onToggleSidebar, isSidebarOpen }: NavbarProps) {
           <button
             aria-label="Notifications"
             className="p-2 rounded-xl text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors relative hidden sm:flex"
-            onClick={() => alert("VYBE Phase 1 Notice: Notifications will sync in Phase 4.")}
+            onClick={() => alert("VYBE Phase 2 Notice: Notifications will sync in Phase 4.")}
           >
             <Bell className="w-5 h-5" />
             <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
@@ -178,7 +271,7 @@ export function Navbar({ onToggleSidebar, isSidebarOpen }: NavbarProps) {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-foreground">Guest Explorer</p>
-                      <p className="text-xs text-brand-400 font-mono">Phase 1 Demo Mode</p>
+                      <p className="text-xs text-brand-400 font-mono">Phase 2 Active</p>
                     </div>
                   </div>
                 </div>
@@ -212,9 +305,9 @@ export function Navbar({ onToggleSidebar, isSidebarOpen }: NavbarProps) {
 
                 <div className="pt-2 border-t border-surface-border/60 px-1">
                   <div className="p-2.5 rounded-xl bg-brand-500/10 text-xs text-foreground-muted">
-                    <p className="font-semibold text-brand-400 mb-0.5">Cloud Sync & Auth</p>
+                    <p className="font-semibold text-brand-400 mb-0.5">Metadata Status</p>
                     <p className="text-[11px] leading-tight">
-                      Supabase account synchronization is planned for Phase 4.
+                      To enable TMDB live search and trending, set TMDB_API_KEY in .env.local.
                     </p>
                   </div>
                 </div>
