@@ -22,6 +22,7 @@ export default function HomePage() {
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [featuredMedia, setFeaturedMedia] = useState<MediaItem | null>(null);
   const [trendingMovies, setTrendingMovies] = useState<MediaItem[]>([]);
+  const [trendingSeries, setTrendingSeries] = useState<MediaItem[]>([]);
   const [popularSeries, setPopularSeries] = useState<MediaItem[]>([]);
   const [trendingAll, setTrendingAll] = useState<MediaItem[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
@@ -34,9 +35,10 @@ export default function HomePage() {
     setIsLoading(true);
     setError(null);
     try {
-      const [trendingData, popSeriesData, trendingMoviesData, genreList] =
+      const [trendingData, trendingSeriesData, popSeriesData, trendingMoviesData, genreList] =
         await Promise.all([
           fetchTrending("all", "day", 1),
+          fetchTrending("tv", "day", 1),
           fetchPopular("tv", 1),
           fetchPopular("movie", 1),
           fetchGenres("movie"),
@@ -50,6 +52,7 @@ export default function HomePage() {
         allItems.find((m) => m.backdropUrl && m.overview) || allItems[0];
       setFeaturedMedia(bestFeatured || null);
 
+      setTrendingSeries(trendingSeriesData.results || []);
       setPopularSeries(popSeriesData.results || []);
       setTrendingMovies(trendingMoviesData.results || []);
       setGenres(genreList || []);
@@ -233,10 +236,19 @@ export default function HomePage() {
             onOpenInfo={(item) => setSelectedMedia(item)}
           />
 
+          {/* Trending TV Series Row */}
+          <MediaRow
+            title="Trending TV Series"
+            subtitle="Global sensation television series trending this week"
+            items={trendingSeries}
+            viewAllHref="/browse?type=tv&sort=trending"
+            onOpenInfo={(item) => setSelectedMedia(item)}
+          />
+
           {/* Popular Movies Row */}
           <MediaRow
             title="Blockbuster Movies"
-            subtitle="Top rated feature films"
+            subtitle="Top rated feature films and cinema hits"
             items={trendingMovies}
             viewAllHref="/browse?type=movie"
             onOpenInfo={(item) => setSelectedMedia(item)}
@@ -245,9 +257,9 @@ export default function HomePage() {
           {/* Popular TV Series Row */}
           <MediaRow
             title="Top Binge-Worthy TV Series"
-            subtitle="Television series trending globally"
+            subtitle="Television series celebrated by audiences worldwide"
             items={popularSeries}
-            viewAllHref="/browse?type=tv"
+            viewAllHref="/browse?type=tv&sort=popular"
             onOpenInfo={(item) => setSelectedMedia(item)}
           />
         </>

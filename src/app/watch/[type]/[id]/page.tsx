@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { fetchDetails, fetchSeasonEpisodes, fetchTrending } from "@/lib/metadata/client";
@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { useUserData } from "@/context/UserDataContext";
 
-export default function WatchPage() {
+function WatchPageContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const { isInWatchlist, addToWatchlist, removeFromWatchlist, updateWatchProgress } = useUserData();
@@ -129,8 +129,10 @@ export default function WatchPage() {
       url.searchParams.set("e", String(e));
       window.history.replaceState(null, "", url.toString());
     }
-    if (s !== activeSeason) {
-      fetchSeasonEpisodes(rawId, s).then((data) => setActiveSeasonData(data)).catch(() => {});
+    if (!activeSeasonData || activeSeasonData.seasonNumber !== s) {
+      fetchSeasonEpisodes(rawId, s).then((data) => {
+        if (data) setActiveSeasonData(data);
+      }).catch(() => {});
     }
     if (window.innerWidth < 1024) {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -170,7 +172,13 @@ export default function WatchPage() {
   }
 
   const actualTmdbId = media.tmdbId || tmdbIdNum;
-  const seasonsToRender = activeSeasonData ? [activeSeasonData] : media.seasons || [];
+  const rawSeasons = media.seasons && media.seasons.length > 0 ? media.seasons : activeSeasonData ? [activeSeasonData] : [];
+  const seasonsToRender = rawSeasons.map((s) => {
+    if (activeSeasonData && s.seasonNumber === activeSeasonData.seasonNumber) {
+      return activeSeasonData;
+    }
+    return s;
+  });
 
   return (
     <div className="space-y-8 animate-fadeIn pb-12">
@@ -349,5 +357,23 @@ export default function WatchPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function WatchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-8 animate-fadeIn py-6">
+          <Skeleton className="w-full aspect-video rounded-3xl" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <Skeleton className="lg:col-span-2 h-48 rounded-3xl" />
+            <Skeleton className="h-48 rounded-3xl" />
+          </div>
+        </div>
+      }
+    >
+      <WatchPageContent />
+    </Suspense>
   );
 }

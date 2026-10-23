@@ -53,6 +53,9 @@ export default function TvDetailsPage() {
           const firstSeasonNum = item.seasons[0].seasonNumber;
           setSelectedSeasonNumber(firstSeasonNum);
           loadSeason(rawId, firstSeasonNum);
+        } else {
+          setSelectedSeasonNumber(1);
+          loadSeason(rawId, 1);
         }
         setRelated((relatedData.results || []).filter((m) => String(m.tmdbId) !== rawId));
       })

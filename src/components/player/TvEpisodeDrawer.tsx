@@ -41,12 +41,16 @@ export function TvEpisodeDrawer({
         {/* Season Selector Tabs / Select */}
         <select
           value={selectedSeasonNumber}
-          onChange={(e) => setSelectedSeasonNumber(Number(e.target.value))}
+          onChange={(e) => {
+            const nextSeason = Number(e.target.value);
+            setSelectedSeasonNumber(nextSeason);
+            onSelectEpisode(nextSeason, 1);
+          }}
           className="h-9 px-3 rounded-xl bg-surface-hover border border-surface-border text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
         >
           {seasons.map((season) => (
             <option key={season.seasonNumber} value={season.seasonNumber}>
-              {season.name} ({season.episodeCount} Ep)
+              {season.name} ({season.episodeCount || season.episodes?.length || 10} Ep)
             </option>
           ))}
         </select>

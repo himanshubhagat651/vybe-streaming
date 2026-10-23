@@ -90,6 +90,15 @@ export class ScreenScapeProvider implements MetadataProvider {
       });
     }
 
+    const cast = Array.isArray(raw.credits?.cast)
+      ? raw.credits.cast.slice(0, 8).map((c: any) => ({
+          id: c.id,
+          name: c.name || "Unknown",
+          character: c.character || "Actor",
+          profileUrl: c.profile_path ? `${TMDB_IMAGE_BASE}/w185${c.profile_path}` : undefined,
+        }))
+      : [];
+
     const item: MediaItem = {
       id: `${isTv ? "tv" : "movie"}-${tmdbId}`,
       tmdbId,
@@ -106,7 +115,7 @@ export class ScreenScapeProvider implements MetadataProvider {
       runtime: raw.runtime ? `${raw.runtime}m` : raw.episode_run_time?.[0] ? `${raw.episode_run_time[0]}m` : undefined,
       quality: "4K",
       genres,
-      cast: [],
+      cast,
       seasons: seasons.length > 0 ? seasons : undefined,
       featured: true,
     };
@@ -202,11 +211,17 @@ export class ScreenScapeProvider implements MetadataProvider {
   ): Promise<PaginatedResult<MediaItem>> {
     try {
       if (mediaType === "movie") {
-        const res = await fetch(`${SCREENSCAPE_BASE_API}/movies/now-playing`, {
+        let res = await fetch(`${SCREENSCAPE_BASE_API}/movies/popular`, {
           headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
           next: { revalidate: 3600 },
         });
-        if (!res.ok) throw new Error(`ScreenScape now-playing failed: HTTP ${res.status}`);
+        if (!res.ok) {
+          res = await fetch(`${SCREENSCAPE_BASE_API}/movies/now-playing`, {
+            headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+            next: { revalidate: 3600 },
+          });
+        }
+        if (!res.ok) throw new Error(`ScreenScape popular movies failed: HTTP ${res.status}`);
         const data = await res.json();
         const results = (data.results || []).map((r: any) => this.mapScreenScapeItem(r, "movie"));
         return {
@@ -217,10 +232,16 @@ export class ScreenScapeProvider implements MetadataProvider {
         };
       }
 
-      const res = await fetch(`${SCREENSCAPE_BASE_API}/tv/trending`, {
+      let res = await fetch(`${SCREENSCAPE_BASE_API}/tv/popular`, {
         headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
         next: { revalidate: 3600 },
       });
+      if (!res.ok) {
+        res = await fetch(`${SCREENSCAPE_BASE_API}/tv/trending`, {
+          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          next: { revalidate: 3600 },
+        });
+      }
       if (!res.ok) throw new Error(`ScreenScape popular TV failed: HTTP ${res.status}`);
       const data = await res.json();
       const results = (data.results || []).map((r: any) => this.mapScreenScapeItem(r, "tv"));
@@ -337,6 +358,28 @@ export class ScreenScapeProvider implements MetadataProvider {
           const raw = await res.json();
           return this.mapScreenScapeItem(raw, "tv");
         }
+
+        // Check tv/popular and tv/trending
+        const [tvPop, tvTrend] = await Promise.all([
+          fetch(`${SCREENSCAPE_BASE_API}/tv/popular`, {
+            headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+            next: { revalidate: 3600 },
+          }),
+          fetch(`${SCREENSCAPE_BASE_API}/tv/trending`, {
+            headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+            next: { revalidate: 3600 },
+          }),
+        ]);
+        if (tvPop.ok) {
+          const data = await tvPop.json();
+          const found = (data.results || []).find((r: any) => String(r.id) === String(id));
+          if (found) return this.mapScreenScapeItem(found, "tv");
+        }
+        if (tvTrend.ok) {
+          const data = await tvTrend.json();
+          const found = (data.results || []).find((r: any) => String(r.id) === String(id));
+          if (found) return this.mapScreenScapeItem(found, "tv");
+        }
       }
 
       // For movies or if TV direct lookup fails, search ScreenScape catalog by ID / title
@@ -395,6 +438,35 @@ export class ScreenScapeProvider implements MetadataProvider {
     seasonNumber: number
   ): Promise<Season> {
     try {
+      // 1. Try ScreenScape dedicated season API endpoint: /api/tv/{id}/season/{season}
+      const seasonRes = await fetch(`${SCREENSCAPE_BASE_API}/tv/${tvId}/season/${seasonNumber}`, {
+        headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+        next: { revalidate: 3600 },
+      });
+
+      if (seasonRes.ok) {
+        const sData = await seasonRes.json();
+        if (Array.isArray(sData.episodes) && sData.episodes.length > 0) {
+          const episodes = sData.episodes.map((ep: any) => ({
+            episodeNumber: ep.episode_number,
+            title: ep.name || `Episode ${ep.episode_number}`,
+            overview: ep.overview || `Season ${seasonNumber}, Episode ${ep.episode_number}`,
+            duration: ep.runtime ? `${ep.runtime}m` : "45m",
+            thumbnailUrl: ep.still_path ? `${TMDB_IMAGE_BASE}/w780${ep.still_path}` : null,
+            airDate: ep.air_date,
+          }));
+
+          return {
+            seasonNumber,
+            name: sData.name || `Season ${seasonNumber}`,
+            overview: sData.overview || "",
+            episodeCount: episodes.length,
+            episodes,
+          };
+        }
+      }
+
+      // 2. Fallback to /api/tv/{id}
       const res = await fetch(`${SCREENSCAPE_BASE_API}/tv/${tvId}`, {
         headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
         next: { revalidate: 3600 },
