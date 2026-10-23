@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Maximize,
   Minimize,
@@ -10,10 +10,12 @@ import {
   AlertTriangle,
   Download,
   Loader2,
-  Film,
   Info,
+  CheckCircle2,
+  RefreshCw,
+  Sparkles,
 } from "lucide-react";
-import { MediaType } from "@/lib/types";
+import { MediaType, SupportedLanguage } from "@/lib/types";
 import {
   buildScreenScapeEmbedUrl,
   buildScreenScapeDownloadUrl,
@@ -21,9 +23,14 @@ import {
   SUPPORTED_LANGUAGES,
   DEFAULT_PLAYER_BASE_URL,
 } from "@/lib/player/url";
+import {
+  isPermittedOrigin,
+  requestProgressFromEmbed,
+  sendProgressToEmbed,
+} from "@/lib/player/postmessage";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
-import { SupportedLanguage } from "@/lib/types";
+import { useUserData } from "@/context/UserDataContext";
 
 interface ScreenScapePlayerProps {
   tmdbId: number | string;
@@ -47,6 +54,9 @@ export function ScreenScapePlayer({
   className = "",
 }: ScreenScapePlayerProps) {
   const { user, updateProfile } = useAuth();
+  const { history, updateWatchProgress } = useUserData();
+
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [selectedLanguage, setSelectedLanguage] = useState<string>(
     user?.preferredLanguage || "eng"
   );
@@ -54,6 +64,11 @@ export function ScreenScapePlayer({
   const [isLoadingIframe, setIsLoadingIframe] = useState<boolean>(true);
   const [reloadKey, setReloadKey] = useState<number>(0);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+
+  // postMessage Bridge State
+  const [isEmbedReady, setIsEmbedReady] = useState<boolean>(false);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   useEffect(() => {
     if (user?.preferredLanguage) {
@@ -78,10 +93,114 @@ export function ScreenScapePlayer({
     baseUrl: selectedServer,
   });
 
-  // Reset loading state when the source URL changes
+  const numericTmdbId = validation.sanitizedTmdbId;
+  const numericSeason = type === "tv" ? validation.sanitizedSeason : undefined;
+  const numericEpisode = type === "tv" ? validation.sanitizedEpisode : undefined;
+
+  // Find any previously saved progress in VYBE for this title
+  const savedItem = history.find((h) => {
+    if (h.tmdbId !== numericTmdbId || h.mediaType !== type) return false;
+    if (type === "tv") {
+      return (
+        (h.season ?? 1) === (numericSeason ?? 1) &&
+        (h.episode ?? 1) === (numericEpisode ?? 1)
+      );
+    }
+    return true;
+  });
+
+  // Reset loading & ready state when the source URL changes
   useEffect(() => {
     setIsLoadingIframe(true);
+    setIsEmbedReady(false);
+    setSyncStatus(null);
   }, [embedUrl, reloadKey]);
+
+  // postMessage Listener for SCREENSCAPE_EMBED_READY handshake
+  useEffect(() => {
+    const handleEmbedMessage = (event: MessageEvent) => {
+      // Validate origin strictly against permitted endpoints
+      if (!isPermittedOrigin(event.origin)) return;
+
+      const data = event.data;
+      if (
+        data?.type === "SCREENSCAPE_EMBED_READY" ||
+        data?.type === "VIDPLUS_EMBED_READY"
+      ) {
+        setIsEmbedReady(true);
+        setSyncStatus("Bridge Ready");
+
+        // Automatically dispatch saved progress if available in VYBE
+        if (numericTmdbId && savedItem && savedItem.progressSeconds > 0) {
+          if (iframeRef.current?.contentWindow) {
+            sendProgressToEmbed(
+              iframeRef.current.contentWindow,
+              selectedServer,
+              {
+                tmdbId: numericTmdbId,
+                progressSeconds: savedItem.progressSeconds,
+                season: numericSeason,
+                episode: numericEpisode,
+              },
+              4000
+            ).then((res) => {
+              if (res.success) {
+                setSyncStatus(`Restored position: ${savedItem.progressSeconds}s`);
+              }
+            });
+          }
+        }
+      }
+    };
+
+    window.addEventListener("message", handleEmbedMessage);
+    return () => {
+      window.removeEventListener("message", handleEmbedMessage);
+    };
+  }, [numericTmdbId, numericSeason, numericEpisode, savedItem, selectedServer]);
+
+  // Request progress from embed iframe manually or periodically
+  const handleSyncFromEmbed = useCallback(async () => {
+    if (!numericTmdbId || !iframeRef.current?.contentWindow) return;
+
+    setIsSyncing(true);
+    setSyncStatus("Requesting embed progress...");
+
+    try {
+      const res = await requestProgressFromEmbed(
+        iframeRef.current.contentWindow,
+        selectedServer,
+        {
+          tmdbId: numericTmdbId,
+          season: numericSeason,
+          episode: numericEpisode,
+        },
+        5000
+      );
+
+      if (res.success && res.progressSeconds !== undefined) {
+        setSyncStatus(`Synced: ${res.progressSeconds}s`);
+        await updateWatchProgress({
+          tmdbId: numericTmdbId,
+          mediaType: type,
+          title,
+          season: numericSeason,
+          episode: numericEpisode,
+          progressSeconds: res.progressSeconds,
+          durationSeconds: savedItem?.durationSeconds || 5400,
+        });
+      } else {
+        setSyncStatus(res.error || "Embed progress query timed out");
+      }
+    } catch (err: unknown) {
+      setSyncStatus(err instanceof Error ? err.message : "Sync failed");
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => {
+        setSyncStatus(null);
+      }, 6000);
+    }
+  }, [numericTmdbId, numericSeason, numericEpisode, selectedServer, title, type, savedItem, updateWatchProgress]);
 
   // Fullscreen change listener
   useEffect(() => {
@@ -111,6 +230,7 @@ export function ScreenScapePlayer({
 
   const handleReload = () => {
     setIsLoadingIframe(true);
+    setIsEmbedReady(false);
     setReloadKey((prev) => prev + 1);
   };
 
@@ -156,6 +276,7 @@ export function ScreenScapePlayer({
 
             {/* Documented ScreenScape Iframe */}
             <iframe
+              ref={iframeRef}
               key={`${embedUrl}-${reloadKey}`}
               src={embedUrl}
               title={`Watch ${title} - ScreenScape Player`}
@@ -175,7 +296,7 @@ export function ScreenScapePlayer({
 
       {/* Responsive Player Control Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-surface border border-surface-border">
-        {/* Left: Mirror Server & Language Selectors */}
+        {/* Left: Mirror Server, Audio Language, & postMessage Bridge Status */}
         <div className="flex flex-wrap items-center gap-3">
           {/* Mirror Server */}
           <div className="flex items-center gap-2">
@@ -212,10 +333,44 @@ export function ScreenScapePlayer({
               ))}
             </select>
           </div>
+
+          {/* postMessage Bridge Badge */}
+          <div
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium border ${
+              isEmbedReady
+                ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                : "bg-surface-hover text-foreground-muted border-surface-border"
+            }`}
+            title="postMessage bridge to ScreenScape embed"
+          >
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isEmbedReady ? "bg-emerald-400 animate-pulse" : "bg-foreground-muted/40"
+              }`}
+            />
+            <span>{isEmbedReady ? "Bridge Connected" : "Bridge Initializing"}</span>
+          </div>
         </div>
 
-        {/* Right: Theater Mode, Fullscreen & Stream Reload */}
+        {/* Right: Sync Progress, Theater Mode, Fullscreen & Stream Reload */}
         <div className="flex items-center gap-2">
+          {/* postMessage Progress Query Button */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleSyncFromEmbed}
+            disabled={isSyncing}
+            title="Query progress via postMessage"
+            className="text-xs h-8 text-brand-400 hover:text-brand-300 border-brand-500/30 hover:bg-brand-500/10"
+          >
+            {isSyncing ? (
+              <RefreshCw className="w-3 h-3 animate-spin mr-1" />
+            ) : (
+              <Sparkles className="w-3 h-3 mr-1" />
+            )}
+            <span>Sync Progress</span>
+          </Button>
+
           {downloadUrl && (
             <a
               href={downloadUrl}
@@ -274,6 +429,14 @@ export function ScreenScapePlayer({
         </div>
       </div>
 
+      {/* Dynamic postMessage Sync Feedback Banner */}
+      {syncStatus && (
+        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/30 text-xs text-brand-300 animate-fadeIn">
+          <CheckCircle2 className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+          <span>{syncStatus}</span>
+        </div>
+      )}
+
       {/* Documented Integration Info Bar */}
       <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-surface-hover/70 border border-surface-border text-[11px] text-foreground-muted">
         <Info className="w-3.5 h-3.5 text-brand-400 shrink-0 mt-0.5" />
@@ -281,10 +444,11 @@ export function ScreenScapePlayer({
           <strong>ScreenScape Integration:</strong> Streaming via documented endpoint{" "}
           <code className="bg-black/30 px-1 py-0.5 rounded text-brand-300 font-mono">
             {type === "tv"
-              ? `?tmdb=${validation.sanitizedTmdbId}&type=tv&s=${validation.sanitizedSeason}&e=${validation.sanitizedEpisode}`
-              : `?tmdb=${validation.sanitizedTmdbId}&type=movie`}
+              ? `?tmdb=${validation.sanitizedTmdbId}&type=tv&s=${validation.sanitizedSeason}&e=${validation.sanitizedEpisode}&lan=${selectedLanguage}`
+              : `?tmdb=${validation.sanitizedTmdbId}&type=movie&lan=${selectedLanguage}`}
           </code>
-          . Multi-server playback, audio tracks, and subtitles are aggregated directly by ScreenScape.
+          . Multi-server playback, audio tracks, subtitles, and progress postMessage protocol (
+          <code>SCREENSCAPE_GET_PROGRESS</code>, <code>SCREENSCAPE_SET_PROGRESS</code>) verified against upstream spec.
         </p>
       </div>
     </div>
