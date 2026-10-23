@@ -70,7 +70,7 @@ export class MockMetadataProvider implements MetadataProvider {
 
   async getByGenre(
     genreId: string | number,
-    mediaType: "movie" | "tv" = "movie",
+    mediaType?: "movie" | "tv",
     page: number = 1
   ): Promise<PaginatedResult<MediaItem>> {
     const genreObj = DEMO_GENRES.find(

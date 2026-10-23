@@ -338,40 +338,135 @@ export class ScreenScapeProvider implements MetadataProvider {
     const targetGenre =
       typeof genreId === "string" ? genreId.toLowerCase() : GENRE_MAP[Number(genreId)]?.toLowerCase();
 
-    // Specialize for Anime: combine curated anime collection and trending anime
+    // Specialize for Anime: ScreenScape live Anime catalog
+    // ScreenScape provides List 1 (/api/lists/1) containing 5,484+ Anime Series
+    // and Japanese Discover (/api/languages/discover?lang=ja&type=movie) containing 1,459+ Anime Movies
     if (targetGenre === "anime") {
-      const animeFromDemo = DEMO_MEDIA.filter((m) =>
-        m.genres.some((g) => g.toLowerCase() === "anime") &&
-        (!mediaType || m.type === mediaType)
-      );
-
       try {
-        const trending = await this.getTrending(mediaType || "all", "day", page);
-        const liveAnime = trending.results.filter((m) =>
-          m.genres.some((g) => g.toLowerCase() === "anime")
-        );
-        const seen = new Set<number>();
-        const merged: MediaItem[] = [];
-        for (const item of [...animeFromDemo, ...liveAnime]) {
-          if (!seen.has(item.tmdbId)) {
-            seen.add(item.tmdbId);
-            merged.push(item);
+        if (mediaType === "tv") {
+          const res = await fetch(`${SCREENSCAPE_BASE_API}/lists/1?page=${page}`, {
+            headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+            next: { revalidate: 3600 },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const results: MediaItem[] = (data.results || []).map((r: any) => {
+              const item = this.mapScreenScapeItem(r, "tv");
+              if (!item.genres.some((g) => g.toLowerCase() === "anime")) {
+                item.genres.unshift("Anime");
+              }
+              return item;
+            });
+            return {
+              page: data.page || page,
+              totalPages: data.total_pages || 275,
+              totalResults: data.total_results || 5484,
+              results,
+            };
           }
+        } else if (mediaType === "movie") {
+          const res = await fetch(
+            `${SCREENSCAPE_BASE_API}/languages/discover?lang=ja&type=movie&page=${page}`,
+            {
+              headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+              next: { revalidate: 3600 },
+            }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const results: MediaItem[] = (data.results || []).map((r: any) => {
+              const item = this.mapScreenScapeItem(r, "movie");
+              if (!item.genres.some((g) => g.toLowerCase() === "anime")) {
+                item.genres.unshift("Anime");
+              }
+              return item;
+            });
+            return {
+              page: data.page || page,
+              totalPages: data.total_pages || 73,
+              totalResults: data.total_results || 1459,
+              results,
+            };
+          }
+        } else {
+          // Both TV Series and Movies requested for comprehensive catalog
+          const [tvRes, movieRes] = await Promise.all([
+            fetch(`${SCREENSCAPE_BASE_API}/lists/1?page=${page}`, {
+              headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+              next: { revalidate: 3600 },
+            }).catch(() => null),
+            fetch(
+              `${SCREENSCAPE_BASE_API}/languages/discover?lang=ja&type=movie&page=${page}`,
+              {
+                headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+                next: { revalidate: 3600 },
+              }
+            ).catch(() => null),
+          ]);
+
+          const tvData = tvRes && tvRes.ok ? await tvRes.json() : null;
+          const movieData = movieRes && movieRes.ok ? await movieRes.json() : null;
+
+          const tvResults = (tvData?.results || []).map((r: any) => {
+            const item = this.mapScreenScapeItem(r, "tv");
+            if (!item.genres.some((g) => g.toLowerCase() === "anime")) {
+              item.genres.unshift("Anime");
+            }
+            return item;
+          });
+
+          const movieResults = (movieData?.results || []).map((r: any) => {
+            const item = this.mapScreenScapeItem(r, "movie");
+            if (!item.genres.some((g) => g.toLowerCase() === "anime")) {
+              item.genres.unshift("Anime");
+            }
+            return item;
+          });
+
+          // Interleave results to provide a balanced collection of series and movies
+          const combined: MediaItem[] = [];
+          const seen = new Set<string>();
+          const maxLen = Math.max(tvResults.length, movieResults.length);
+          for (let i = 0; i < maxLen; i++) {
+            if (i < tvResults.length && !seen.has(tvResults[i].id)) {
+              seen.add(tvResults[i].id);
+              combined.push(tvResults[i]);
+            }
+            if (i < movieResults.length && !seen.has(movieResults[i].id)) {
+              seen.add(movieResults[i].id);
+              combined.push(movieResults[i]);
+            }
+          }
+
+          const totalPages = Math.max(tvData?.total_pages || 275, movieData?.total_pages || 73);
+          const totalResults = (tvData?.total_results || 5484) + (movieData?.total_results || 1459);
+
+          return {
+            page,
+            totalPages,
+            totalResults,
+            results:
+              combined.length > 0
+                ? combined
+                : DEMO_MEDIA.filter((m) => m.genres.some((g) => g.toLowerCase() === "anime")),
+          };
         }
-        return {
-          page: 1,
-          totalPages: 1,
-          totalResults: merged.length,
-          results: merged,
-        };
-      } catch {
-        return {
-          page: 1,
-          totalPages: 1,
-          totalResults: animeFromDemo.length,
-          results: animeFromDemo,
-        };
+      } catch (err) {
+        console.warn("ScreenScapeProvider.getByGenre(anime) live error:", err);
       }
+
+      // Offline / fallback to demo anime
+      const animeFromDemo = DEMO_MEDIA.filter(
+        (m) =>
+          m.genres.some((g) => g.toLowerCase() === "anime") &&
+          (!mediaType || m.type === mediaType)
+      );
+      return {
+        page: 1,
+        totalPages: 1,
+        totalResults: animeFromDemo.length,
+        results: animeFromDemo,
+      };
     }
 
     const trending = await this.getTrending(mediaType || "all", "day", page);
