@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { fetchDetails, fetchSeasonEpisodes, fetchTrending } from "@/lib/metadata/client";
@@ -84,9 +84,15 @@ function WatchPageContent() {
   }, [rawId, mediaType, initialSeason]);
 
   // Automatically record playback session to user's watch history / Continue Watching
+  const hasTrackedProgress = useRef<string | null>(null);
+
   useEffect(() => {
     if (media && (media.tmdbId || tmdbIdNum)) {
       const targetId = media.tmdbId || tmdbIdNum;
+      const sessionKey = `${mediaType}-${targetId}-${mediaType === "tv" ? activeSeason : 0}-${mediaType === "tv" ? activeEpisode : 0}`;
+      if (hasTrackedProgress.current === sessionKey) return;
+      hasTrackedProgress.current = sessionKey;
+
       updateWatchProgress({
         tmdbId: targetId,
         mediaType,

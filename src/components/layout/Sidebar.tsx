@@ -51,7 +51,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar Container */}
       <aside
         className={cn(
-          "fixed top-16 bottom-0 left-0 z-40 flex flex-col bg-background/95 md:bg-transparent backdrop-blur-xl md:backdrop-blur-none border-r border-surface-border transition-all duration-300 ease-in-out",
+          "fixed top-16 bottom-0 left-0 z-40 flex flex-col bg-background/95 backdrop-blur-xl border-r border-surface-border transition-all duration-300 ease-in-out",
           // Mobile: slide in/out
           isOpen ? "translate-x-0 w-64 shadow-2xl" : "-translate-x-full md:translate-x-0",
           // Desktop: compact rail if !isOpen, full drawer if isOpen

@@ -296,8 +296,6 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
       voteAverage?: number;
       releaseYear?: string;
     }) => {
-      if (isInWatchlist(item.tmdbId, item.mediaType)) return;
-
       const newItem: WatchlistItem = {
         id: `wl_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         userId: activeUserId,
@@ -311,8 +309,24 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
         createdAt: new Date().toISOString(),
       };
 
-      const updated = [newItem, ...watchlist];
-      setWatchlist(updated);
+      let added = false;
+      setWatchlist((prevWatchlist) => {
+        if (
+          prevWatchlist.some(
+            (w) => w.tmdbId === item.tmdbId && w.mediaType === item.mediaType
+          )
+        ) {
+          return prevWatchlist;
+        }
+        added = true;
+        const updated = [newItem, ...prevWatchlist];
+        try {
+          localStorage.setItem(`vybe_data_${activeUserId}_watchlist`, JSON.stringify(updated));
+        } catch {
+          // Storage access blocked
+        }
+        return updated;
+      });
 
       const config = getSupabaseConfigStatus();
       if (config.isConfigured && user) {
@@ -332,26 +346,25 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
           } catch (err) {
             console.error("Error writing to Supabase watchlist:", err);
           }
-          return;
         }
       }
-
-      // Local storage partition
-      try {
-        localStorage.setItem(`vybe_data_${activeUserId}_watchlist`, JSON.stringify(updated));
-      } catch {
-        // Storage access blocked
-      }
     },
-    [activeUserId, isInWatchlist, user, watchlist]
+    [activeUserId, user]
   );
 
   const removeFromWatchlist = useCallback(
     async (tmdbId: number, mediaType: MediaType) => {
-      const updated = watchlist.filter(
-        (item) => !(item.tmdbId === tmdbId && item.mediaType === mediaType)
-      );
-      setWatchlist(updated);
+      setWatchlist((prevWatchlist) => {
+        const updated = prevWatchlist.filter(
+          (item) => !(item.tmdbId === tmdbId && item.mediaType === mediaType)
+        );
+        try {
+          localStorage.setItem(`vybe_data_${activeUserId}_watchlist`, JSON.stringify(updated));
+        } catch {
+          // Storage access blocked
+        }
+        return updated;
+      });
 
       const config = getSupabaseConfigStatus();
       if (config.isConfigured && user) {
@@ -367,17 +380,10 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
           } catch (err) {
             console.error("Error removing from Supabase watchlist:", err);
           }
-          return;
         }
       }
-
-      try {
-        localStorage.setItem(`vybe_data_${activeUserId}_watchlist`, JSON.stringify(updated));
-      } catch {
-        // Storage access blocked
-      }
     },
-    [activeUserId, user, watchlist]
+    [activeUserId, user]
   );
 
   const updateWatchProgress = useCallback(
@@ -397,55 +403,64 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
         item.durationSeconds > 0 &&
         item.progressSeconds / item.durationSeconds >= 0.95;
 
-      const existingIndex = history.findIndex((h) => {
-        if (h.tmdbId !== item.tmdbId || h.mediaType !== item.mediaType) return false;
-        if (item.mediaType === "tv") {
-          return (
-            (h.season ?? 1) === (item.season ?? 1) &&
-            (h.episode ?? 1) === (item.episode ?? 1)
-          );
-        }
-        return true;
-      });
-
-      const updatedHistory = [...history];
       const now = new Date().toISOString();
 
-      if (existingIndex >= 0) {
-        const existing = updatedHistory[existingIndex];
-        const updatedItem: WatchHistoryItem = {
-          ...existing,
-          title: item.title || existing.title,
-          posterPath: item.posterPath ?? existing.posterPath,
-          backdropPath: item.backdropPath ?? existing.backdropPath,
-          progressSeconds: Math.max(item.progressSeconds, 0),
-          durationSeconds: item.durationSeconds ?? existing.durationSeconds,
-          completed: isCompleted,
-          lastWatchedAt: now,
-        };
-        // Move to top of history
-        updatedHistory.splice(existingIndex, 1);
-        updatedHistory.unshift(updatedItem);
-      } else {
-        const newItem: WatchHistoryItem = {
-          id: `wh_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-          userId: activeUserId,
-          tmdbId: item.tmdbId,
-          mediaType: item.mediaType,
-          title: item.title,
-          posterPath: item.posterPath,
-          backdropPath: item.backdropPath,
-          season: item.season ?? null,
-          episode: item.episode ?? null,
-          progressSeconds: Math.max(item.progressSeconds, 0),
-          durationSeconds: item.durationSeconds ?? null,
-          completed: isCompleted,
-          lastWatchedAt: now,
-        };
-        updatedHistory.unshift(newItem);
-      }
+      setHistory((prevHistory) => {
+        const existingIndex = prevHistory.findIndex((h) => {
+          if (h.tmdbId !== item.tmdbId || h.mediaType !== item.mediaType) return false;
+          if (item.mediaType === "tv") {
+            return (
+              (h.season ?? 1) === (item.season ?? 1) &&
+              (h.episode ?? 1) === (item.episode ?? 1)
+            );
+          }
+          return true;
+        });
 
-      setHistory(updatedHistory);
+        const updatedHistory = [...prevHistory];
+
+        if (existingIndex >= 0) {
+          const existing = updatedHistory[existingIndex];
+          const updatedItem: WatchHistoryItem = {
+            ...existing,
+            title: item.title || existing.title,
+            posterPath: item.posterPath ?? existing.posterPath,
+            backdropPath: item.backdropPath ?? existing.backdropPath,
+            progressSeconds: Math.max(item.progressSeconds, 0),
+            durationSeconds: item.durationSeconds ?? existing.durationSeconds,
+            completed: isCompleted,
+            lastWatchedAt: now,
+          };
+          // Move to top of history
+          updatedHistory.splice(existingIndex, 1);
+          updatedHistory.unshift(updatedItem);
+        } else {
+          const newItem: WatchHistoryItem = {
+            id: `wh_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            userId: activeUserId,
+            tmdbId: item.tmdbId,
+            mediaType: item.mediaType,
+            title: item.title,
+            posterPath: item.posterPath,
+            backdropPath: item.backdropPath,
+            season: item.season ?? null,
+            episode: item.episode ?? null,
+            progressSeconds: Math.max(item.progressSeconds, 0),
+            durationSeconds: item.durationSeconds ?? null,
+            completed: isCompleted,
+            lastWatchedAt: now,
+          };
+          updatedHistory.unshift(newItem);
+        }
+
+        try {
+          localStorage.setItem(`vybe_data_${activeUserId}_history`, JSON.stringify(updatedHistory));
+        } catch {
+          // Storage access blocked
+        }
+
+        return updatedHistory;
+      });
 
       const config = getSupabaseConfigStatus();
       if (config.isConfigured && user) {
@@ -474,17 +489,10 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
           } catch (err) {
             console.error("Error updating Supabase watch progress:", err);
           }
-          return;
         }
       }
-
-      try {
-        localStorage.setItem(`vybe_data_${activeUserId}_history`, JSON.stringify(updatedHistory));
-      } catch {
-        // Storage access blocked
-      }
     },
-    [activeUserId, history, user]
+    [activeUserId, user]
   );
 
   const removeFromHistory = useCallback(
@@ -494,18 +502,26 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
       season?: number | null,
       episode?: number | null
     ) => {
-      const updated = history.filter((item) => {
-        if (item.tmdbId !== tmdbId || item.mediaType !== mediaType) return true;
-        if (mediaType === "tv") {
-          return !(
-            (item.season ?? 1) === (season ?? 1) &&
-            (item.episode ?? 1) === (episode ?? 1)
-          );
-        }
-        return false;
-      });
+      setHistory((prevHistory) => {
+        const updated = prevHistory.filter((item) => {
+          if (item.tmdbId !== tmdbId || item.mediaType !== mediaType) return true;
+          if (mediaType === "tv") {
+            return !(
+              (item.season ?? 1) === (season ?? 1) &&
+              (item.episode ?? 1) === (episode ?? 1)
+            );
+          }
+          return false;
+        });
 
-      setHistory(updated);
+        try {
+          localStorage.setItem(`vybe_data_${activeUserId}_history`, JSON.stringify(updated));
+        } catch {
+          // Storage access blocked
+        }
+
+        return updated;
+      });
 
       const config = getSupabaseConfigStatus();
       if (config.isConfigured && user) {
@@ -527,17 +543,10 @@ export function UserDataProvider({ children }: { children: React.ReactNode }) {
           } catch (err) {
             console.error("Error removing from Supabase history:", err);
           }
-          return;
         }
       }
-
-      try {
-        localStorage.setItem(`vybe_data_${activeUserId}_history`, JSON.stringify(updated));
-      } catch {
-        // Storage access blocked
-      }
     },
-    [activeUserId, history, user]
+    [activeUserId, user]
   );
 
   const clearHistory = useCallback(async () => {
