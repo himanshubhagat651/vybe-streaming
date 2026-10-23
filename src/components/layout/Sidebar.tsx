@@ -10,7 +10,6 @@ import {
   Flame,
   Bookmark,
   History,
-  Sparkles,
   Compass,
 } from "lucide-react";
 import { DEMO_GENRES } from "@/lib/demoData";
@@ -182,17 +181,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </Link>
                   ))}
                 </div>
-              </div>
-
-              {/* Phase 4 Status Box */}
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-brand-600/10 to-indigo-600/5 border border-brand-500/20 text-xs">
-                <div className="flex items-center gap-1.5 font-semibold text-brand-400 mb-1">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Phase 4 Persistence</span>
-                </div>
-                <p className="text-[11px] text-foreground-muted leading-relaxed">
-                  Supabase Auth & Multi-Account Isolation active. Watchlist & History sync per user.
-                </p>
               </div>
             </>
           )}
