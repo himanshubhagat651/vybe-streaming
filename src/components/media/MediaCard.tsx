@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Play, Star, Bookmark, Check, Info } from "lucide-react";
+import { Play, Star, Bookmark, Check, Info, Film, Tv } from "lucide-react";
 import { MediaItem } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ interface MediaCardProps {
 
 export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const toggleBookmark = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -31,27 +32,43 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
   };
 
   const watchUrl = `/watch/${media.type}/${media.tmdbId}`;
+  const hasValidImage = media.posterUrl && !imgError;
 
   return (
     <div className="group relative flex flex-col rounded-2xl overflow-hidden bg-surface border border-surface-border transition-all duration-300 hover:shadow-2xl hover:shadow-black/50 hover:border-brand-500/40 hover:-translate-y-1.5 select-none">
       {/* Poster Image Container */}
       <Link href={watchUrl} className="relative aspect-poster w-full overflow-hidden bg-surface-hover">
-        <img
-          src={media.posterUrl}
-          alt={media.title}
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+        {hasValidImage ? (
+          <img
+            src={media.posterUrl!}
+            alt={media.title}
+            loading="lazy"
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-b from-surface-hover to-surface border-b border-surface-border">
+            <div className="w-12 h-12 rounded-2xl bg-brand-600/10 text-brand-400 flex items-center justify-center mb-2">
+              {media.type === "tv" ? <Tv className="w-6 h-6" /> : <Film className="w-6 h-6" />}
+            </div>
+            <p className="text-xs font-bold text-foreground line-clamp-3">{media.title}</p>
+            <span className="text-[10px] text-foreground-muted/60 mt-1 uppercase font-mono">No Poster</span>
+          </div>
+        )}
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
         {/* Top Badges */}
         <div className="absolute top-2.5 inset-x-2.5 flex items-center justify-between z-10">
-          <Badge variant="rating">
-            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-            {media.rating.toFixed(1)}
-          </Badge>
+          {media.rating > 0 ? (
+            <Badge variant="rating">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              {media.rating.toFixed(1)}
+            </Badge>
+          ) : (
+            <Badge variant="outline">NR</Badge>
+          )}
 
           <Badge variant="quality">{media.quality || "HD"}</Badge>
         </div>
@@ -96,8 +113,12 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
             <span className="uppercase font-semibold tracking-wider text-brand-400">
               {media.type === "tv" ? "TV Series" : "Movie"}
             </span>
-            <span>•</span>
-            <span>{media.releaseYear}</span>
+            {media.releaseYear && (
+              <>
+                <span>•</span>
+                <span>{media.releaseYear}</span>
+              </>
+            )}
             {media.runtime && (
               <>
                 <span>•</span>
@@ -113,17 +134,19 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
           </Link>
         </div>
 
-        {/* Genre Tags */}
-        <div className="flex flex-wrap gap-1 pt-1">
-          {media.genres.slice(0, 2).map((genre) => (
-            <span
-              key={genre}
-              className="text-[10px] text-foreground-muted/80 bg-surface-hover px-1.5 py-0.5 rounded border border-surface-border/50"
-            >
-              {genre}
-            </span>
-          ))}
-        </div>
+        {/* Genre Tags (only when provided) */}
+        {media.genres && media.genres.length > 0 && (
+          <div className="flex flex-wrap gap-1 pt-1">
+            {media.genres.slice(0, 2).map((genre) => (
+              <span
+                key={genre}
+                className="text-[10px] text-foreground-muted/80 bg-surface-hover px-1.5 py-0.5 rounded border border-surface-border/50"
+              >
+                {genre}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

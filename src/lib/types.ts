@@ -4,20 +4,22 @@ export interface CastMember {
   id: string;
   name: string;
   character: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
 }
 
 export interface Episode {
   episodeNumber: number;
   title: string;
   overview: string;
-  duration: string;
-  thumbnailUrl: string;
+  duration?: string;
+  thumbnailUrl?: string | null;
+  airDate?: string;
 }
 
 export interface Season {
   seasonNumber: number;
   name: string;
+  overview?: string;
   episodeCount: number;
   episodes: Episode[];
 }
@@ -28,13 +30,14 @@ export interface MediaItem {
   imdbId?: string;
   type: MediaType;
   title: string;
-  tagline: string;
-  overview: string;
-  posterUrl: string;
-  backdropUrl: string;
-  rating: number;
+  tagline?: string;
+  overview?: string;
+  posterUrl?: string | null;
+  backdropUrl?: string | null;
+  rating: number; // 0 if unrated
   voteCount: number;
-  releaseYear: string;
+  releaseYear?: string;
+  releaseDate?: string;
   runtime?: string;
   quality?: "4K" | "1080p" | "HD";
   ageRating?: "PG-13" | "R" | "TV-MA" | "PG" | "TV-14";
@@ -45,10 +48,24 @@ export interface MediaItem {
   featured?: boolean;
   trendingRank?: number;
   languageAvailable?: string[];
+  status?: string;
 }
 
 export interface Genre {
-  id: string;
+  id: string | number;
   name: string;
   slug: string;
+}
+
+export interface PaginatedResult<T> {
+  page: number;
+  totalPages: number;
+  totalResults: number;
+  results: T[];
+}
+
+export interface ProviderStatus {
+  providerName: "TMDB" | "Mock";
+  isConfigured: boolean;
+  message?: string;
 }

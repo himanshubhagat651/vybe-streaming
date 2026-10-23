@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Season, Episode } from "@/lib/types";
-import { Play, Clock, CheckCircle } from "lucide-react";
+import { Play, Clock, CheckCircle, Tv } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TvEpisodeDrawerProps {
@@ -67,11 +67,17 @@ export function TvEpisodeDrawer({
             >
               {/* Thumbnail */}
               <div className="relative w-28 h-18 sm:w-32 sm:h-20 rounded-xl overflow-hidden shrink-0 bg-black">
-                <img
-                  src={ep.thumbnailUrl}
-                  alt={ep.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                />
+                {ep.thumbnailUrl ? (
+                  <img
+                    src={ep.thumbnailUrl}
+                    alt={ep.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-surface-hover flex items-center justify-center">
+                    <Tv className="w-5 h-5 text-white/30" />
+                  </div>
+                )}
                 <div
                   className={cn(
                     "absolute inset-0 flex items-center justify-center transition-opacity",

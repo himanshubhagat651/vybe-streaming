@@ -388,7 +388,7 @@ export function searchMedia(query: string, genreSlug?: string): MediaItem[] {
   return list.filter(
     (m) =>
       m.title.toLowerCase().includes(q) ||
-      m.overview.toLowerCase().includes(q) ||
+      (m.overview && m.overview.toLowerCase().includes(q)) ||
       m.genres.some((g) => g.toLowerCase().includes(q)) ||
       m.cast.some((c) => c.name.toLowerCase().includes(q))
   );

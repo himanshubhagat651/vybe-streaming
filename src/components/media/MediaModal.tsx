@@ -52,11 +52,15 @@ export function MediaModal({ media, onClose }: MediaModalProps) {
 
         {/* Modal Header with Backdrop */}
         <div className="relative h-64 sm:h-80 w-full shrink-0 overflow-hidden bg-black">
-          <img
-            src={media.backdropUrl}
-            alt={media.title}
-            className="w-full h-full object-cover"
-          />
+          {media.backdropUrl ? (
+            <img
+              src={media.backdropUrl}
+              alt={media.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-brand-950 via-surface to-background opacity-60" />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent" />
 
           {/* Title on Backdrop */}

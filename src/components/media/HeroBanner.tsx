@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Play, Info, Star, Sparkles, Volume2, Bookmark, Check } from "lucide-react";
+import { Play, Info, Star, Sparkles, Film, Tv } from "lucide-react";
 import { MediaItem } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -16,13 +16,19 @@ export function HeroBanner({ media, onOpenInfo }: HeroBannerProps) {
   const watchUrl = `/watch/${media.type}/${media.tmdbId}`;
 
   return (
-    <div className="relative w-full h-[540px] md:h-[620px] rounded-3xl overflow-hidden mb-8 border border-surface-border shadow-2xl select-none">
-      {/* Background Cinematic Image */}
-      <img
-        src={media.backdropUrl}
-        alt={media.title}
-        className="w-full h-full object-cover object-center transform scale-100 animate-fadeIn"
-      />
+    <div className="relative w-full h-[540px] md:h-[620px] rounded-3xl overflow-hidden mb-8 border border-surface-border shadow-2xl select-none bg-surface-hover">
+      {/* Background Cinematic Image or Fallback */}
+      {media.backdropUrl ? (
+        <img
+          src={media.backdropUrl}
+          alt={media.title}
+          className="w-full h-full object-cover object-center transform scale-100 animate-fadeIn"
+        />
+      ) : (
+        <div className="w-full h-full bg-gradient-to-br from-brand-950 via-surface to-background flex items-center justify-center opacity-40">
+          {media.type === "tv" ? <Tv className="w-24 h-24 text-white/20" /> : <Film className="w-24 h-24 text-white/20" />}
+        </div>
+      )}
 
       {/* Gradients to blend smoothly with dark/light background */}
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
@@ -36,10 +42,12 @@ export function HeroBanner({ media, onOpenInfo }: HeroBannerProps) {
             <Sparkles className="w-3.5 h-3.5" />
             Spotlight Premiere
           </span>
-          <Badge variant="rating">
-            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-            {media.rating.toFixed(1)} Rating
-          </Badge>
+          {media.rating > 0 && (
+            <Badge variant="rating">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              {media.rating.toFixed(1)} Rating
+            </Badge>
+          )}
           <Badge variant="quality">{media.quality || "4K Ultra HD"}</Badge>
           {media.ageRating && <Badge variant="outline">{media.ageRating}</Badge>}
         </div>
@@ -56,28 +64,32 @@ export function HeroBanner({ media, onOpenInfo }: HeroBannerProps) {
           </p>
         )}
 
-        <p className="text-xs sm:text-sm md:text-base text-gray-200 line-clamp-3 leading-relaxed max-w-2xl drop-shadow">
-          {media.overview}
-        </p>
+        {media.overview && (
+          <p className="text-xs sm:text-sm md:text-base text-gray-200 line-clamp-3 leading-relaxed max-w-2xl drop-shadow">
+            {media.overview}
+          </p>
+        )}
 
-        {/* Genres & Director */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-gray-300">
-          <span className="font-semibold text-white">Genres:</span>
-          {media.genres.map((g) => (
-            <span
-              key={g}
-              className="px-2 py-0.5 rounded-md bg-white/10 backdrop-blur-sm border border-white/10"
-            >
-              {g}
-            </span>
-          ))}
-          {media.director && (
-            <>
-              <span className="mx-1">•</span>
-              <span>Directed by <strong className="text-white">{media.director}</strong></span>
-            </>
-          )}
-        </div>
+        {/* Genres & Director (only when returned) */}
+        {media.genres && media.genres.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-gray-300">
+            <span className="font-semibold text-white">Genres:</span>
+            {media.genres.map((g) => (
+              <span
+                key={g}
+                className="px-2 py-0.5 rounded-md bg-white/10 backdrop-blur-sm border border-white/10"
+              >
+                {g}
+              </span>
+            ))}
+            {media.director && (
+              <>
+                <span className="mx-1">•</span>
+                <span>Directed by <strong className="text-white">{media.director}</strong></span>
+              </>
+            )}
+          </div>
+        )}
 
         {/* CTA Buttons */}
         <div className="flex flex-wrap items-center gap-3 pt-3">

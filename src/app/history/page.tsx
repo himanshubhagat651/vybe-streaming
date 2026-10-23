@@ -87,7 +87,7 @@ export default function HistoryPage() {
                 {/* Backdrop Thumbnail with Progress Bar */}
                 <Link href={watchUrl} className="relative aspect-video w-full overflow-hidden bg-black">
                   <img
-                    src={item.media.backdropUrl}
+                    src={item.media.backdropUrl || undefined}
                     alt={item.media.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />

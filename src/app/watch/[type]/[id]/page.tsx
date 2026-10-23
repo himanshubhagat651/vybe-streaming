@@ -1,55 +1,97 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import {
-  getMediaByTmdbId,
-  getMediaById,
-  DEMO_MEDIA,
-  getMediaByGenre,
-} from "@/lib/demoData";
-import { MediaType } from "@/lib/types";
+import { useParams, useSearchParams } from "next/navigation";
+import { fetchDetails, fetchSeasonEpisodes, fetchTrending } from "@/lib/metadata/client";
+import { MediaType, MediaItem, Season } from "@/lib/types";
 import { ScreenScapePlayer } from "@/components/player/ScreenScapePlayer";
 import { TvEpisodeDrawer } from "@/components/player/TvEpisodeDrawer";
 import { MediaRow } from "@/components/media/MediaRow";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
 import {
   Star,
-  Calendar,
-  Clock,
   Bookmark,
   Share2,
   Check,
   ChevronLeft,
-  Tv,
-  Film,
   Download,
+  AlertCircle,
+  Info,
+  Film,
 } from "lucide-react";
 
 export default function WatchPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const rawType = (params.type as string) || "movie";
   const rawId = params.id as string;
+  const initialSeason = parseInt(searchParams.get("s") || "1", 10);
+  const initialEpisode = parseInt(searchParams.get("e") || "1", 10);
 
   const mediaType: MediaType = rawType === "tv" ? "tv" : "movie";
   const tmdbIdNum = parseInt(rawId, 10);
 
-  // Lookup media in demo store
-  const media =
-    getMediaByTmdbId(tmdbIdNum, mediaType) ||
-    getMediaById(rawId) ||
-    DEMO_MEDIA[0];
+  const [media, setMedia] = useState<MediaItem | null>(null);
+  const [activeSeason, setActiveSeason] = useState(initialSeason);
+  const [activeEpisode, setActiveEpisode] = useState(initialEpisode);
+  const [activeSeasonData, setActiveSeasonData] = useState<Season | null>(null);
+  const [recommendations, setRecommendations] = useState<MediaItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const actualTmdbId = media.tmdbId || tmdbIdNum || 550;
-
-  // TV Series active episode state
-  const [activeSeason, setActiveSeason] = useState(1);
-  const [activeEpisode, setActiveEpisode] = useState(1);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    setError(null);
+
+    Promise.all([
+      fetchDetails(rawId, mediaType),
+      fetchTrending(mediaType, "day", 1).catch(() => ({ results: [] })),
+    ])
+      .then(([item, trendingData]) => {
+        if (!isMounted) return;
+        setMedia(item);
+        setRecommendations((trendingData.results || []).filter((m) => String(m.tmdbId) !== rawId));
+
+        if (mediaType === "tv") {
+          fetchSeasonEpisodes(rawId, initialSeason)
+            .then((sData) => {
+              if (isMounted) setActiveSeasonData(sData);
+            })
+            .catch(() => {});
+        }
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        setError(err.message || "Failed to load media for playback.");
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [rawId, mediaType, initialSeason]);
+
+  const handleEpisodeChange = (s: number, e: number) => {
+    setActiveSeason(s);
+    setActiveEpisode(e);
+    if (s !== activeSeason) {
+      fetchSeasonEpisodes(rawId, s).then((data) => setActiveSeasonData(data)).catch(() => {});
+    }
+    if (window.innerWidth < 1024) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   const handleShare = () => {
     if (typeof window !== "undefined") {
@@ -59,23 +101,36 @@ export default function WatchPage() {
     }
   };
 
-  const handleEpisodeChange = (s: number, e: number) => {
-    setActiveSeason(s);
-    setActiveEpisode(e);
-    // Smooth scroll back to player on mobile
-    if (window.innerWidth < 1024) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="space-y-8 animate-fadeIn py-6">
+        <Skeleton className="w-full aspect-video rounded-3xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <Skeleton className="lg:col-span-2 h-48 rounded-3xl" />
+          <Skeleton className="h-48 rounded-3xl" />
+        </div>
+      </div>
+    );
+  }
 
-  // Recommended titles based on genre
-  const recommendations = getMediaByGenre(media.genres[0] || "Action").filter(
-    (m) => m.tmdbId !== actualTmdbId
-  );
+  if (error || !media) {
+    return (
+      <EmptyState
+        icon={<Film className="w-10 h-10" />}
+        title="Playback Stream Unavailable"
+        description={error || "Could not find title information in the metadata provider."}
+        actionText="Back to Catalog"
+        actionHref="/"
+      />
+    );
+  }
+
+  const actualTmdbId = media.tmdbId || tmdbIdNum;
+  const seasonsToRender = activeSeasonData ? [activeSeasonData] : media.seasons || [];
 
   return (
     <div className="space-y-8 animate-fadeIn pb-12">
-      {/* Back button link */}
+      {/* Back button and Download Mirror link */}
       <div className="flex items-center justify-between">
         <Link
           href="/"
@@ -85,7 +140,6 @@ export default function WatchPage() {
           <span>Back to Discovery</span>
         </Link>
 
-        {/* Dedicated ScreenScape Download Page Link */}
         <a
           href={`https://web.screenscape.fun/download/${mediaType}/${actualTmdbId}`}
           target="_blank"
@@ -100,7 +154,7 @@ export default function WatchPage() {
       {/* Main Watch Layout Grid */}
       <div
         className={`grid gap-8 ${
-          media.type === "tv" && media.seasons && media.seasons.length > 0 && !isTheaterMode
+          media.type === "tv" && seasonsToRender.length > 0 && !isTheaterMode
             ? "grid-cols-1 lg:grid-cols-3"
             : "grid-cols-1"
         }`}
@@ -108,7 +162,7 @@ export default function WatchPage() {
         {/* Left / Center: ScreenScape Player Frame */}
         <div
           className={`${
-            media.type === "tv" && media.seasons && !isTheaterMode ? "lg:col-span-2" : "col-span-1"
+            media.type === "tv" && seasonsToRender.length > 0 && !isTheaterMode ? "lg:col-span-2" : "col-span-1"
           } space-y-6`}
         >
           <ScreenScapePlayer
@@ -129,15 +183,18 @@ export default function WatchPage() {
                   <Badge variant="brand">
                     {media.type === "tv" ? "TV Series" : "Movie"}
                   </Badge>
-                  <Badge variant="rating">
-                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    {media.rating.toFixed(1)}
-                  </Badge>
-                  <Badge variant="quality">{media.quality || "4K Ultra HD"}</Badge>
-                  {media.ageRating && <Badge variant="outline">{media.ageRating}</Badge>}
-                  <span className="text-xs text-foreground-muted font-medium">
-                    {media.releaseYear}
-                  </span>
+                  {media.rating > 0 && (
+                    <Badge variant="rating">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      {media.rating.toFixed(1)}
+                    </Badge>
+                  )}
+                  <Badge variant="quality">{media.quality || "4K"}</Badge>
+                  {media.releaseYear && (
+                    <span className="text-xs text-foreground-muted font-medium">
+                      {media.releaseYear}
+                    </span>
+                  )}
                   {media.runtime && (
                     <span className="text-xs text-foreground-muted">• {media.runtime}</span>
                   )}
@@ -180,15 +237,25 @@ export default function WatchPage() {
               </div>
             </div>
 
-            {/* Synopsis */}
-            <div className="space-y-2 border-t border-surface-border/60 pt-4">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
-                Synopsis
-              </h3>
-              <p className="text-sm text-foreground/90 leading-relaxed max-w-4xl">
-                {media.overview}
+            {/* Playback Disclaimer */}
+            <div className="p-3.5 rounded-2xl bg-surface-hover/70 border border-surface-border flex items-start gap-2.5 text-xs text-foreground-muted">
+              <Info className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />
+              <p className="text-[11px] leading-relaxed">
+                <strong>Third-Party Stream Notice:</strong> The embedded player references ScreenScape with provider ID <code>{actualTmdbId}</code>. Playback availability depends on multi-server mirror indexing and may not be available for every catalog entry.
               </p>
             </div>
+
+            {/* Synopsis */}
+            {media.overview && (
+              <div className="space-y-2 border-t border-surface-border/60 pt-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+                  Synopsis
+                </h3>
+                <p className="text-sm text-foreground/90 leading-relaxed max-w-4xl">
+                  {media.overview}
+                </p>
+              </div>
+            )}
 
             {/* Cast & Crew */}
             {media.cast && media.cast.length > 0 && (
@@ -215,10 +282,10 @@ export default function WatchPage() {
         </div>
 
         {/* Right / Sidebar: TV Episode Drawer (if TV series) */}
-        {media.type === "tv" && media.seasons && media.seasons.length > 0 && (
+        {media.type === "tv" && seasonsToRender.length > 0 && (
           <div className="space-y-4">
             <TvEpisodeDrawer
-              seasons={media.seasons}
+              seasons={seasonsToRender}
               activeSeason={activeSeason}
               activeEpisode={activeEpisode}
               onSelectEpisode={handleEpisodeChange}
@@ -232,7 +299,7 @@ export default function WatchPage() {
         <div className="pt-6">
           <MediaRow
             title="More Titles Like This"
-            subtitle="Curated recommendations based on genres and themes"
+            subtitle="Trending recommendations from the provider catalog"
             items={recommendations}
           />
         </div>
