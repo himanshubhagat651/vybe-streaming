@@ -83,7 +83,10 @@ Results: 22 / 22 tests passed (100%)
 - **Server-Side Authorization**: API routes deriving caller identity exclusively from verified session cookies, rejecting unauthenticated tampering.
 
 ### B. Metadata Providers & ScreenScape Catalog Synchronization
-- **Live ScreenScape Catalog Provider (`ScreenScapeProvider`)**: VYBE directly integrates with ScreenScape's public catalog API (`https://web.screenscape.fun/api/movies/trending`, `/api/tv/trending`, `/api/movies/now-playing`, `/api/movies/upcoming`, `/api/search`, and `/api/tv/{id}`). This guarantees that all movies and TV shows featured on ScreenScape (including *Clayface*, *Spider-Man: Brand New Day*, *Hope*, *Street Fighter*, *Lupin*, *Cyberpunk: Edgerunners*, etc.) are dynamically loaded into VYBE out-of-the-box without requiring an external TMDB API key.
+- **Live ScreenScape Catalog Provider (`ScreenScapeProvider`)**: VYBE directly integrates with ScreenScape's public catalog API (`https://web.screenscape.fun/api/movies/trending`, `/api/tv/trending`, `/api/tv/popular`, `/api/movies/popular`, `/api/movies/now-playing`, `/api/movies/upcoming`, `/api/search`, `/api/tv/{id}`, and `/api/tv/{id}/season/{season}`).
+  - **TV Series & Trending Series Synchronized**: Dedicated endpoints for Trending TV Series (*Lupin*, *The Apothecary Diaries*, *Cyberpunk: Edgerunners*) and Popular TV Series (*Grey's Anatomy*, *Breaking Bad*, *Person of Interest*).
+  - **Real Season & Episode Guide**: Upstream ScreenScape season API queries return actual episode numbers, authentic episode titles, episode synopses, runtimes, and high-res episode still thumbnails.
+  - **Dynamic Multi-Season Playback**: Season drawer dynamically switches seasons, preserves all series seasons in navigation, and updates the player URL seamlessly.
 - **TMDB Provider (`TmdbProvider`)**: If `TMDB_API_KEY` is provided in `.env.local`, the platform automatically upgrades to use full TMDB API v3 endpoints.
 - **Offline Mock Provider (`MockMetadataProvider`)**: Seamless fallback for isolated or network-disconnected development.
 
