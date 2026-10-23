@@ -18,13 +18,11 @@ import {
   Tv,
   LogIn,
   LogOut,
-  Users,
   Globe,
-  Database,
   Check,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
-import { useAuth, TEST_ACCOUNTS } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { useUserData } from "@/context/UserDataContext";
 import { fetchSearch } from "@/lib/metadata/client";
 import { MediaItem, SupportedLanguage } from "@/lib/types";
@@ -42,9 +40,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
     isAuthenticated,
     openAuthModal,
     signOut,
-    switchTestAccount,
     updateProfile,
-    configStatus,
   } = useAuth();
   const { watchlist, continueWatching } = useUserData();
 
@@ -109,15 +105,6 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsSearchOpenMobile(false);
     }
-  };
-
-  const handleAccountSwitch = async (key: "alex" | "jordan") => {
-    await switchTestAccount(key);
-    const target = TEST_ACCOUNTS[key];
-    if (target?.preferredTheme) {
-      setTheme(target.preferredTheme);
-    }
-    setIsProfileOpen(false);
   };
 
   const handleLanguageChange = async (lang: SupportedLanguage) => {
@@ -398,63 +385,17 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
                     </div>
                   </div>
 
-                  {/* Multi-Account Isolation Switcher (1-Click Switch) */}
-                  <div className="py-2 px-3 border-t border-surface-border/60 bg-surface-hover/30">
-                    <div className="flex items-center justify-between text-[11px] font-semibold text-foreground-muted mb-1.5">
-                      <span className="flex items-center gap-1.5">
-                        <Users className="w-3.5 h-3.5 text-brand-400" />
-                        Switch Test Account
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleAccountSwitch("alex")}
-                        className={`p-1.5 rounded-lg border text-left text-[11px] flex items-center justify-between transition-colors ${
-                          user.id === TEST_ACCOUNTS.alex.id
-                            ? "bg-brand-500/20 border-brand-500/40 text-foreground font-semibold"
-                            : "bg-surface-hover border-surface-border text-foreground-muted hover:text-foreground"
-                        }`}
-                      >
-                        <span className="truncate">Alex (Dark)</span>
-                        {user.id === TEST_ACCOUNTS.alex.id && (
-                          <Check className="w-3 h-3 text-brand-400" />
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleAccountSwitch("jordan")}
-                        className={`p-1.5 rounded-lg border text-left text-[11px] flex items-center justify-between transition-colors ${
-                          user.id === TEST_ACCOUNTS.jordan.id
-                            ? "bg-brand-500/20 border-brand-500/40 text-foreground font-semibold"
-                            : "bg-surface-hover border-surface-border text-foreground-muted hover:text-foreground"
-                        }`}
-                      >
-                        <span className="truncate">Jordan (Light)</span>
-                        {user.id === TEST_ACCOUNTS.jordan.id && (
-                          <Check className="w-3 h-3 text-brand-400" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Backend Status Footer */}
-                  <div className="p-2 border-t border-surface-border/60 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-[10px] text-foreground-muted">
-                      <Database className="w-3 h-3 text-brand-400" />
-                      <span>{configStatus.isConfigured ? "Supabase Live" : "Demo Mode"}</span>
-                    </div>
-
+                  {/* Sign Out Button */}
+                  <div className="p-2 border-t border-surface-border/60">
                     <button
                       type="button"
                       onClick={() => {
                         signOut();
                         setIsProfileOpen(false);
                       }}
-                      className="flex items-center gap-1 text-[11px] text-red-400 hover:text-red-300 px-2 py-1 rounded-lg hover:bg-red-500/10 transition-colors"
+                      className="w-full flex items-center justify-center gap-1.5 text-xs text-red-400 hover:text-red-300 px-3 py-1.5 rounded-xl hover:bg-red-500/10 transition-colors font-medium"
                     >
-                      <LogOut className="w-3 h-3" />
+                      <LogOut className="w-3.5 h-3.5" />
                       <span>Sign Out</span>
                     </button>
                   </div>

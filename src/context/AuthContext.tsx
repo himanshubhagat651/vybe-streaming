@@ -103,13 +103,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
         } else {
-          // Default to Account A (Alex) initially so user can test immediate signed-in state
-          const defaultAccount = TEST_ACCOUNTS.alex;
-          setUser(defaultAccount);
-          localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(defaultAccount));
+          setUser(null);
         }
       } catch {
-        setUser(TEST_ACCOUNTS.alex);
+        setUser(null);
       }
       setIsLoading(false);
     }

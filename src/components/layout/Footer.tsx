@@ -52,7 +52,7 @@ export function Footer() {
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-brand-400 shrink-0" />
             <span>
-              <strong>Phase 1 UI Prototype:</strong> Built with local demo data. Video stream provided via documented ScreenScape embed iframe.
+              Stream playback provided via verified ScreenScape embed player.
             </span>
           </div>
 

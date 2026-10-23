@@ -27,11 +27,7 @@ export default function WatchlistPage() {
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs uppercase font-mono tracking-wider text-brand-400 font-semibold flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              {user ? `${user.username}'s Library` : "Guest Library"}
-            </span>
-            <span className="text-xs text-foreground-muted">•</span>
-            <span className="text-xs text-foreground-muted">
-              {configStatus.isConfigured ? "Supabase Live" : "Isolated Demo Mode"}
+              {user ? `${user.username}'s Library` : "My Library"}
             </span>
           </div>
 
