@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MediaItem, Genre } from "@/lib/types";
 import { HeroBanner } from "@/components/media/HeroBanner";
 import { MediaRow } from "@/components/media/MediaRow";
+import { TopTenShowcase } from "@/components/media/TopTenShowcase";
 import { MediaModal } from "@/components/media/MediaModal";
 import { MediaCardSkeleton } from "@/components/ui/Skeleton";
 import { fetchTrending, fetchPopular, fetchGenres, fetchByGenre, fetchByRegion } from "@/lib/metadata/client";
@@ -294,6 +295,15 @@ export default function HomePage() {
                 onOpenInfo={(item) => setSelectedMedia(item)}
               />
             </div>
+          )}
+
+          {/* TOP 10 Showcase (Matching Netflix / Movy Spotlight Leaderboard UI) */}
+          {trendingAll.length > 0 && (
+            <TopTenShowcase
+              items={trendingAll}
+              title="TOP 10 on VYBE"
+              onOpenInfo={(item) => setSelectedMedia(item)}
+            />
           )}
 
           {/* Regional Cinema & Shows Spotlight Tab Section */}
