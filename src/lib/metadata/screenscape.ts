@@ -146,7 +146,7 @@ export class ScreenScapeProvider implements MetadataProvider {
   ): Promise<PaginatedResult<MediaItem>> {
     try {
       if (mediaType === "movie") {
-        const res = await fetch(`${SCREENSCAPE_BASE_API}/movies/trending`, {
+        const res = await fetch(`${SCREENSCAPE_BASE_API}/movies/trending?page=${page}`, {
           headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
           next: { revalidate: 3600 },
         });
@@ -155,14 +155,14 @@ export class ScreenScapeProvider implements MetadataProvider {
         const results = (data.results || []).map((r: any) => this.mapScreenScapeItem(r, "movie"));
         return {
           page: data.page || page,
-          totalPages: data.total_pages || 1,
-          totalResults: data.total_results || results.length,
+          totalPages: data.total_pages || 500,
+          totalResults: data.total_results || 10000,
           results,
         };
       }
 
       if (mediaType === "tv") {
-        const res = await fetch(`${SCREENSCAPE_BASE_API}/tv/trending`, {
+        const res = await fetch(`${SCREENSCAPE_BASE_API}/tv/trending?page=${page}`, {
           headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
           next: { revalidate: 3600 },
         });
@@ -171,19 +171,19 @@ export class ScreenScapeProvider implements MetadataProvider {
         const results = (data.results || []).map((r: any) => this.mapScreenScapeItem(r, "tv"));
         return {
           page: data.page || page,
-          totalPages: data.total_pages || 1,
-          totalResults: data.total_results || results.length,
+          totalPages: data.total_pages || 500,
+          totalResults: data.total_results || 10000,
           results,
         };
       }
 
-      // "all": fetch both and interleave
+      // "all": fetch both for this page and interleave
       const [moviesRes, tvRes] = await Promise.all([
-        fetch(`${SCREENSCAPE_BASE_API}/movies/trending`, {
+        fetch(`${SCREENSCAPE_BASE_API}/movies/trending?page=${page}`, {
           headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
           next: { revalidate: 3600 },
         }),
-        fetch(`${SCREENSCAPE_BASE_API}/tv/trending`, {
+        fetch(`${SCREENSCAPE_BASE_API}/tv/trending?page=${page}`, {
           headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
           next: { revalidate: 3600 },
         }),
@@ -196,16 +196,23 @@ export class ScreenScapeProvider implements MetadataProvider {
       const tvShows = (tvData.results || []).map((r: any) => this.mapScreenScapeItem(r, "tv"));
 
       const combined: MediaItem[] = [];
+      const seen = new Set<string>();
       const maxLen = Math.max(movies.length, tvShows.length);
       for (let i = 0; i < maxLen; i++) {
-        if (i < movies.length) combined.push(movies[i]);
-        if (i < tvShows.length) combined.push(tvShows[i]);
+        if (i < movies.length && !seen.has(movies[i].id)) {
+          seen.add(movies[i].id);
+          combined.push(movies[i]);
+        }
+        if (i < tvShows.length && !seen.has(tvShows[i].id)) {
+          seen.add(tvShows[i].id);
+          combined.push(tvShows[i]);
+        }
       }
 
       return {
-        page: 1,
-        totalPages: 10,
-        totalResults: combined.length,
+        page,
+        totalPages: Math.max(moviesData.total_pages || 500, tvData.total_pages || 500),
+        totalResults: (moviesData.total_results || 10000) + (tvData.total_results || 10000),
         results: combined,
       };
     } catch (err) {
@@ -225,12 +232,12 @@ export class ScreenScapeProvider implements MetadataProvider {
   ): Promise<PaginatedResult<MediaItem>> {
     try {
       if (mediaType === "movie") {
-        let res = await fetch(`${SCREENSCAPE_BASE_API}/movies/popular`, {
+        let res = await fetch(`${SCREENSCAPE_BASE_API}/movies/popular?page=${page}`, {
           headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
           next: { revalidate: 3600 },
         });
         if (!res.ok) {
-          res = await fetch(`${SCREENSCAPE_BASE_API}/movies/now-playing`, {
+          res = await fetch(`${SCREENSCAPE_BASE_API}/movies/now-playing?page=${page}`, {
             headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
             next: { revalidate: 3600 },
           });
@@ -240,18 +247,18 @@ export class ScreenScapeProvider implements MetadataProvider {
         const results = (data.results || []).map((r: any) => this.mapScreenScapeItem(r, "movie"));
         return {
           page: data.page || page,
-          totalPages: data.total_pages || 1,
-          totalResults: data.total_results || results.length,
+          totalPages: data.total_pages || 1001,
+          totalResults: data.total_results || 20000,
           results,
         };
       }
 
-      let res = await fetch(`${SCREENSCAPE_BASE_API}/tv/popular`, {
+      let res = await fetch(`${SCREENSCAPE_BASE_API}/tv/popular?page=${page}`, {
         headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
         next: { revalidate: 3600 },
       });
       if (!res.ok) {
-        res = await fetch(`${SCREENSCAPE_BASE_API}/tv/trending`, {
+        res = await fetch(`${SCREENSCAPE_BASE_API}/tv/trending?page=${page}`, {
           headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
           next: { revalidate: 3600 },
         });
@@ -261,8 +268,8 @@ export class ScreenScapeProvider implements MetadataProvider {
       const results = (data.results || []).map((r: any) => this.mapScreenScapeItem(r, "tv"));
       return {
         page: data.page || page,
-        totalPages: data.total_pages || 1,
-        totalResults: data.total_results || results.length,
+        totalPages: data.total_pages || 1001,
+        totalResults: data.total_results || 20000,
         results,
       };
     } catch (err) {
@@ -288,7 +295,7 @@ export class ScreenScapeProvider implements MetadataProvider {
 
     try {
       const res = await fetch(
-        `${SCREENSCAPE_BASE_API}/search?q=${encodeURIComponent(query.trim())}`,
+        `${SCREENSCAPE_BASE_API}/search?q=${encodeURIComponent(query.trim())}&page=${page}`,
         {
           headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
           next: { revalidate: 600 },
@@ -469,19 +476,92 @@ export class ScreenScapeProvider implements MetadataProvider {
       };
     }
 
-    const trending = await this.getTrending(mediaType || "all", "day", page);
+    // Specialize for Korean Dramas & Cinema (ScreenScape List 3: 11,145 titles)
+    if (targetGenre === "korean" || targetGenre === "k-drama") {
+      try {
+        const res = await fetch(`${SCREENSCAPE_BASE_API}/lists/3?page=${page}`, {
+          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          next: { revalidate: 3600 },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const results: MediaItem[] = (data.results || []).map((r: any) =>
+            this.mapScreenScapeItem(r, mediaType || (r.name ? "tv" : "movie"))
+          );
+          return {
+            page: data.page || page,
+            totalPages: data.total_pages || 558,
+            totalResults: data.total_results || 11145,
+            results,
+          };
+        }
+      } catch (err) {
+        console.warn("ScreenScapeProvider.getByGenre(korean) error:", err);
+      }
+    }
 
-    if (!targetGenre) return trending;
+    // Specialize for Marvel Universe (ScreenScape List 2: 80 titles)
+    if (targetGenre === "marvel") {
+      try {
+        const res = await fetch(`${SCREENSCAPE_BASE_API}/lists/2?page=${page}`, {
+          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          next: { revalidate: 3600 },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const results: MediaItem[] = (data.results || []).map((r: any) =>
+            this.mapScreenScapeItem(r, "movie")
+          );
+          return {
+            page: data.page || page,
+            totalPages: data.total_pages || 4,
+            totalResults: data.total_results || 80,
+            results,
+          };
+        }
+      } catch (err) {
+        console.warn("ScreenScapeProvider.getByGenre(marvel) error:", err);
+      }
+    }
 
-    const filtered = trending.results.filter((m) =>
-      m.genres.some((g) => g.toLowerCase() === targetGenre)
+    // Specialize for DC Universe (ScreenScape List 4: 1,238 titles)
+    if (targetGenre === "dc") {
+      try {
+        const res = await fetch(`${SCREENSCAPE_BASE_API}/lists/4?page=${page}`, {
+          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          next: { revalidate: 3600 },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const results: MediaItem[] = (data.results || []).map((r: any) =>
+            this.mapScreenScapeItem(r, mediaType || (r.name ? "tv" : "movie"))
+          );
+          return {
+            page: data.page || page,
+            totalPages: data.total_pages || 62,
+            totalResults: data.total_results || 1238,
+            results,
+          };
+        }
+      } catch (err) {
+        console.warn("ScreenScapeProvider.getByGenre(dc) error:", err);
+      }
+    }
+
+    // For standard genres (Action, Comedy, Drama, Sci-Fi, Horror, etc.)
+    const popularData = await this.getPopular(mediaType || "movie", page);
+
+    if (!targetGenre || targetGenre === "all") return popularData;
+
+    const filtered = popularData.results.filter((m) =>
+      m.genres.some((g) => g.toLowerCase().includes(targetGenre) || targetGenre.includes(g.toLowerCase()))
     );
 
     return {
-      page: 1,
-      totalPages: 1,
-      totalResults: filtered.length,
-      results: filtered.length > 0 ? filtered : trending.results,
+      page,
+      totalPages: popularData.totalPages || 50,
+      totalResults: popularData.totalResults || 1000,
+      results: filtered.length > 0 ? filtered : popularData.results,
     };
   }
 

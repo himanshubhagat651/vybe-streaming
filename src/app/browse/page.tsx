@@ -67,8 +67,8 @@ function BrowseContent() {
     setError(null);
     try {
       let data;
-      if (genre && genre.toLowerCase() === "anime") {
-        data = await fetchByGenre("anime", type === "all" ? undefined : type, page);
+      if (genre && genre !== "all") {
+        data = await fetchByGenre(genre, type === "all" ? undefined : type, page);
       } else if (sort === "trending") {
         data = await fetchTrending(type, "week", page);
       } else {
