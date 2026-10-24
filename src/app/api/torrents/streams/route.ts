@@ -1,29 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { parseTorrentioStreams, TorrentStream } from "@/lib/torrents";
 
 export const runtime = "edge";
-
-const TRACKERS = [
-  "udp://tracker.opentrackr.org:1337/announce",
-  "udp://open.stealth.si:80/announce",
-  "udp://tracker.torrent.eu.org:451/announce",
-  "udp://tracker.coppersurfer.tk:6969/announce",
-  "udp://explodie.org:6969/announce",
-  "wss://tracker.openwebtorrent.com",
-  "wss://tracker.btorrent.xyz",
-];
-
-export interface TorrentStream {
-  infoHash: string;
-  name: string;
-  title: string;
-  quality: string;
-  resolution: string;
-  seeders?: number;
-  size?: string;
-  source?: string;
-  filename?: string;
-  magnetUrl: string;
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -110,61 +88,7 @@ export async function GET(request: NextRequest) {
 
     const data = await torrentRes.json();
     const rawStreams = data?.streams || [];
-
-    // Step 3: Parse and enrich streams
-    const trackerParams = TRACKERS.map((t) => `&tr=${encodeURIComponent(t)}`).join("");
-
-    const streams: TorrentStream[] = rawStreams
-      .filter((s: any) => s.infoHash)
-      .map((s: any) => {
-        const rawTitle: string = s.title || "";
-        const lines = rawTitle.split("\n");
-
-        // Extract seeders
-        const seedMatch = rawTitle.match(/👤\s*(\d+)/);
-        const seeders = seedMatch ? parseInt(seedMatch[1], 10) : undefined;
-
-        // Extract size
-        const sizeMatch = rawTitle.match(/💾\s*([\d\.]+\s*[GMK]B)/i);
-        const size = sizeMatch ? sizeMatch[1] : undefined;
-
-        // Extract provider/indexer
-        const sourceMatch = rawTitle.match(/⚙️\s*([^\n]+)/);
-        const source = sourceMatch ? sourceMatch[1].trim() : undefined;
-
-        // Extract resolution from name or title
-        let resolution = "1080p";
-        if (/4k|2160p/i.test(s.name) || /2160p|4k/i.test(rawTitle)) resolution = "4K 2160p";
-        else if (/1080p/i.test(s.name) || /1080p/i.test(rawTitle)) resolution = "1080p FHD";
-        else if (/720p/i.test(s.name) || /720p/i.test(rawTitle)) resolution = "720p HD";
-
-        // Quality features (HDR, DV, Remux)
-        const tags: string[] = [];
-        if (/HDR/i.test(rawTitle) || /HDR/i.test(s.name)) tags.push("HDR");
-        if (/DV|Dolby Vision/i.test(rawTitle) || /DV/i.test(s.name)) tags.push("Dolby Vision");
-        if (/Remux/i.test(rawTitle)) tags.push("Remux");
-        const quality = tags.length > 0 ? tags.join(" • ") : "Standard";
-
-        const filename = s.behaviorHints?.filename || lines[0] || `${title}`;
-        const dn = encodeURIComponent(filename);
-        const magnetUrl = `magnet:?xt=urn:btih:${s.infoHash}&dn=${dn}${trackerParams}`;
-
-        return {
-          infoHash: s.infoHash,
-          name: s.name,
-          title: filename,
-          quality,
-          resolution,
-          seeders,
-          size,
-          source,
-          filename,
-          magnetUrl,
-        };
-      });
-
-    // Sort by seeders descending
-    streams.sort((a, b) => (b.seeders || 0) - (a.seeders || 0));
+    const streams: TorrentStream[] = parseTorrentioStreams(rawStreams, title);
 
     return NextResponse.json({
       imdbId,
