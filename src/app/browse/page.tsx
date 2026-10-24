@@ -10,7 +10,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 import { fetchTrending, fetchPopular, fetchGenres, fetchByGenre, fetchByRegion } from "@/lib/metadata/client";
 import { RegionTabBar } from "@/components/media/RegionTabBar";
-import { getRegionByCode } from "@/lib/regions";
+import { getRegionByCode, getIndianLanguageByCode } from "@/lib/regions";
+import { getAllIndianCinema, getAllIndianSeries } from "@/lib/demoData";
 import { AlertCircle, ChevronLeft, ChevronRight, Film, Flame, Globe, RefreshCw, Sparkles, Tv } from "lucide-react";
 
 function BrowseContent() {
@@ -20,6 +21,7 @@ function BrowseContent() {
   const typeParam = (searchParams.get("type") as "movie" | "tv" | "all") || "all";
   const genreParam = searchParams.get("genre") || "all";
   const regionParam = searchParams.get("region") || "all";
+  const subLangParam = searchParams.get("subLang") || searchParams.get("lang") || "all";
   const sortParam = (searchParams.get("sort") as "trending" | "popular") || (searchParams.get("type") ? "trending" : "trending");
   const pageParam = parseInt(searchParams.get("page") || "1", 10);
 
@@ -27,6 +29,7 @@ function BrowseContent() {
   const [filterSort, setFilterSort] = useState<"trending" | "popular">(sortParam);
   const [filterGenre, setFilterGenre] = useState<string>(genreParam);
   const [filterRegion, setFilterRegion] = useState<string>(regionParam);
+  const [filterSubLang, setFilterSubLang] = useState<string>(subLangParam);
   const [currentPage, setCurrentPage] = useState<number>(pageParam);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [genres, setGenres] = useState<Genre[]>([]);
@@ -43,12 +46,14 @@ function BrowseContent() {
     const currentType = (searchParams.get("type") as "movie" | "tv" | "all") || "all";
     const currentGenre = searchParams.get("genre") || "all";
     const currentRegion = searchParams.get("region") || "all";
+    const currentSubLang = searchParams.get("subLang") || searchParams.get("lang") || "all";
     const currentSort = (searchParams.get("sort") as "trending" | "popular") || (searchParams.get("type") === "tv" ? "trending" : "trending");
     const currentPageNum = parseInt(searchParams.get("page") || "1", 10);
 
     setFilterType(currentType);
     setFilterGenre(currentGenre);
     setFilterRegion(currentRegion);
+    setFilterSubLang(currentSubLang);
     setFilterSort(currentSort);
     setCurrentPage(currentPageNum);
   }, [searchParams]);
@@ -70,14 +75,20 @@ function BrowseContent() {
     sort: "trending" | "popular",
     page: number,
     genre: string,
-    region: string
+    region: string,
+    subLang: string = "all"
   ) => {
     setIsLoading(true);
     setError(null);
     try {
       let data;
       if (region && region !== "all") {
-        data = await fetchByRegion(region, type, page);
+        data = await fetchByRegion(
+          region,
+          type,
+          page,
+          region.toUpperCase() === "IN" && subLang !== "all" ? subLang : undefined
+        );
       } else if (genre && genre !== "all") {
         data = await fetchByGenre(genre, type === "all" ? undefined : type, page);
       } else if (sort === "trending") {
@@ -99,32 +110,66 @@ function BrowseContent() {
         }
       }
 
+      // If viewing India and results are empty (offline / API issue), fallback to authentic Indian titles
+      if (region.toUpperCase() === "IN" && results.length === 0) {
+        const cinema = getAllIndianCinema();
+        const series = getAllIndianSeries();
+        let fallback = type === "movie" ? cinema : type === "tv" ? series : [...cinema, ...series];
+        if (subLang !== "all") {
+          fallback = fallback.filter((m) =>
+            m.languageAvailable?.includes(subLang) ||
+            (subLang === "hi" && m.languageAvailable?.includes("hindi"))
+          );
+        }
+        if (fallback.length > 0) {
+          results = fallback;
+        }
+      }
+
       setItems(results);
       setTotalPages(data.totalPages || 1);
     } catch (err: any) {
-      setError(err.message || "Failed to load titles from metadata provider.");
-      setItems([]);
+      if (region.toUpperCase() === "IN") {
+        const cinema = getAllIndianCinema();
+        const series = getAllIndianSeries();
+        let fallback = type === "movie" ? cinema : type === "tv" ? series : [...cinema, ...series];
+        if (subLang !== "all") {
+          fallback = fallback.filter((m) =>
+            m.languageAvailable?.includes(subLang) ||
+            (subLang === "hi" && m.languageAvailable?.includes("hindi"))
+          );
+        }
+        setItems(fallback);
+        setTotalPages(1);
+      } else {
+        setError(err.message || "Failed to load titles from metadata provider.");
+        setItems([]);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData(filterType, filterSort, currentPage, filterGenre, filterRegion);
-  }, [filterType, filterSort, currentPage, filterGenre, filterRegion]);
+    loadData(filterType, filterSort, currentPage, filterGenre, filterRegion, filterSubLang);
+  }, [filterType, filterSort, currentPage, filterGenre, filterRegion, filterSubLang]);
 
   const updateUrl = (
     newType: "movie" | "tv" | "all",
     newSort: "trending" | "popular",
     newGenre: string,
     newPage: number,
-    newRegion: string
+    newRegion: string,
+    newSubLang: string = filterSubLang
   ) => {
     const params = new URLSearchParams();
     if (newType !== "all") params.set("type", newType);
     if (newSort !== "trending") params.set("sort", newSort);
     if (newGenre !== "all") params.set("genre", newGenre);
     if (newRegion !== "all") params.set("region", newRegion);
+    if (newRegion.toUpperCase() === "IN" && newSubLang && newSubLang !== "all") {
+      params.set("subLang", newSubLang);
+    }
     if (newPage > 1) params.set("page", String(newPage));
 
     const queryString = params.toString();
@@ -134,32 +179,40 @@ function BrowseContent() {
   const handleTypeChange = (newType: "movie" | "tv" | "all") => {
     setFilterType(newType);
     setCurrentPage(1);
-    updateUrl(newType, filterSort, filterGenre, 1, filterRegion);
+    updateUrl(newType, filterSort, filterGenre, 1, filterRegion, filterSubLang);
   };
 
   const handleSortChange = (newSort: "trending" | "popular") => {
     setFilterSort(newSort);
     setCurrentPage(1);
-    updateUrl(filterType, newSort, filterGenre, 1, filterRegion);
+    updateUrl(filterType, newSort, filterGenre, 1, filterRegion, filterSubLang);
   };
 
   const handleGenreChange = (newGenre: string) => {
     const target = filterGenre === newGenre ? "all" : newGenre;
     setFilterGenre(target);
     setCurrentPage(1);
-    updateUrl(filterType, filterSort, target, 1, filterRegion);
+    updateUrl(filterType, filterSort, target, 1, filterRegion, filterSubLang);
   };
 
   const handleRegionChange = (newRegion: string) => {
     setFilterRegion(newRegion);
+    const sub = newRegion.toUpperCase() === "IN" ? filterSubLang : "all";
+    setFilterSubLang(sub);
     setCurrentPage(1);
-    updateUrl(filterType, filterSort, filterGenre, 1, newRegion);
+    updateUrl(filterType, filterSort, filterGenre, 1, newRegion, sub);
+  };
+
+  const handleSubLangChange = (newSubLang: string) => {
+    setFilterSubLang(newSubLang);
+    setCurrentPage(1);
+    updateUrl(filterType, filterSort, filterGenre, 1, filterRegion, newSubLang);
   };
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     setCurrentPage(newPage);
-    updateUrl(filterType, filterSort, filterGenre, newPage, filterRegion);
+    updateUrl(filterType, filterSort, filterGenre, newPage, filterRegion, filterSubLang);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -184,6 +237,12 @@ function BrowseContent() {
                 {activeRegionObj.alias && (
                   <span className="text-xs px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30 font-mono font-medium">
                     {activeRegionObj.alias}
+                  </span>
+                )}
+                {activeRegionObj.code === "IN" && filterSubLang !== "all" && (
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 font-semibold flex items-center gap-1">
+                    <span>{getIndianLanguageByCode(filterSubLang)?.flag}</span>
+                    <span>{getIndianLanguageByCode(filterSubLang)?.industry}</span>
                   </span>
                 )}
               </>
@@ -233,6 +292,8 @@ function BrowseContent() {
           <RegionTabBar
             selectedRegion={filterRegion}
             onSelectRegion={handleRegionChange}
+            selectedSubLang={filterSubLang}
+            onSelectSubLang={handleSubLangChange}
             title="Browse By Country & Region"
           />
         </div>
@@ -341,7 +402,7 @@ function BrowseContent() {
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
-          <Button size="sm" variant="outline" onClick={() => loadData(filterType, filterSort, currentPage, filterGenre, filterRegion)}>
+          <Button size="sm" variant="outline" onClick={() => loadData(filterType, filterSort, currentPage, filterGenre, filterRegion, filterSubLang)}>
             <RefreshCw className="w-3.5 h-3.5 mr-1" />
             Retry
           </Button>

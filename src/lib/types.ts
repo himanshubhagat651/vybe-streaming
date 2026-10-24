@@ -40,7 +40,7 @@ export interface MediaItem {
   releaseDate?: string;
   runtime?: string;
   quality?: "4K" | "1080p" | "HD";
-  ageRating?: "PG-13" | "R" | "TV-MA" | "PG" | "TV-14";
+  ageRating?: "PG-13" | "R" | "TV-MA" | "PG" | "TV-14" | "U/A 13+" | "U/A 16+" | "16+" | "18+" | "U" | "A" | string;
   genres: string[];
   cast: CastMember[];
   director?: string;

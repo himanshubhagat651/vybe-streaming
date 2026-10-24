@@ -204,6 +204,14 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
               Anime
             </Link>
 
+            {/* 🇮🇳 Indian Cinema Upper Tab */}
+            <Link
+              href="/browse?region=IN"
+              className="px-3 py-1.5 rounded-xl text-xs xl:text-sm font-semibold text-amber-400/90 hover:text-amber-300 hover:bg-amber-500/10 transition-colors flex items-center gap-1.5 border border-amber-500/20"
+            >
+              <span>🇮🇳 Indian Cinema</span>
+            </Link>
+
             {/* GENRES Upper Tab with Interactive Popover */}
             <div className="relative" ref={genreDropdownRef}>
               <button

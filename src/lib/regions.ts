@@ -8,6 +8,29 @@ export interface Region {
   isCustom?: boolean;
 }
 
+export interface IndianLanguage {
+  code: string;
+  name: string;
+  nativeName: string;
+  industry: string;
+  flag: string;
+}
+
+export const INDIAN_LANGUAGES: IndianLanguage[] = [
+  { code: "all", name: "All India", nativeName: "अखिल भारतीय", industry: "Pan-India Blockbusters", flag: "🇮🇳" },
+  { code: "hi", name: "Hindi", nativeName: "हिन्दी", industry: "Bollywood", flag: "🎬" },
+  { code: "te", name: "Telugu", nativeName: "తెలుగు", industry: "Tollywood", flag: "🔥" },
+  { code: "ta", name: "Tamil", nativeName: "தமிழ்", industry: "Kollywood", flag: "⚡" },
+  { code: "ml", name: "Malayalam", nativeName: "മലയാളം", industry: "Mollywood", flag: "🌴" },
+  { code: "kn", name: "Kannada", nativeName: "ಕನ್ನಡ", industry: "Sandalwood", flag: "👑" },
+  { code: "pa", name: "Punjabi", nativeName: "ਪੰਜਾਬੀ", industry: "Pollywood", flag: "💥" },
+  { code: "bn", name: "Bengali", nativeName: "বাংলা", industry: "Tollywood East", flag: "🎭" },
+];
+
+export function getIndianLanguageByCode(code: string): IndianLanguage | undefined {
+  return INDIAN_LANGUAGES.find((l) => l.code.toLowerCase() === code.toLowerCase());
+}
+
 export const ALL_REGIONS: Region[] = [
   { code: "all", name: "All Regions", flag: "🌍", lang: "", alias: "Global Feeds" },
   { code: "IN", name: "India", flag: "🇮🇳", lang: "hi", alias: "Bollywood & Regional" },

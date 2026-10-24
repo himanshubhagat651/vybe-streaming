@@ -31,7 +31,8 @@ export interface MetadataProvider {
   getByRegion?(
     regionCode: string,
     mediaType?: "all" | "movie" | "tv",
-    page?: number
+    page?: number,
+    subLang?: string
   ): Promise<PaginatedResult<MediaItem>>;
 
   getDetails(

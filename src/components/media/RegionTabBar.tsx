@@ -6,6 +6,7 @@ import {
   Region,
   ALL_REGIONS,
   DEFAULT_TAB_CODES,
+  INDIAN_LANGUAGES,
   getRegionByCode,
   getStoredTabRegionCodes,
   saveStoredTabRegionCodes,
@@ -15,6 +16,8 @@ import { cn } from "@/lib/utils";
 interface RegionTabBarProps {
   selectedRegion: string;
   onSelectRegion: (code: string) => void;
+  selectedSubLang?: string;
+  onSelectSubLang?: (lang: string) => void;
   className?: string;
   title?: string;
 }
@@ -22,6 +25,8 @@ interface RegionTabBarProps {
 export function RegionTabBar({
   selectedRegion,
   onSelectRegion,
+  selectedSubLang = "all",
+  onSelectSubLang,
   className,
   title = "Explore By Region",
 }: RegionTabBarProps) {
@@ -150,6 +155,38 @@ export function RegionTabBar({
           <span>More Regions...</span>
         </button>
       </div>
+
+      {/* Indian Cinema Sub-Language & Industry Selector */}
+      {selectedRegion.toUpperCase() === "IN" && onSelectSubLang && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar animate-fadeIn">
+          <span className="text-[11px] font-bold text-foreground-muted uppercase tracking-wider pl-1 pr-1 shrink-0 flex items-center gap-1">
+            <span>🇮🇳</span>
+            <span>Industries:</span>
+          </span>
+          {INDIAN_LANGUAGES.map((lang) => {
+            const isSubSelected =
+              (selectedSubLang || "all").toLowerCase() === lang.code.toLowerCase();
+            return (
+              <button
+                key={lang.code}
+                onClick={() => onSelectSubLang(lang.code)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border shrink-0 active:scale-95",
+                  isSubSelected
+                    ? "bg-gradient-to-r from-amber-500/20 to-brand-500/20 text-amber-300 border-amber-500/50 shadow-sm"
+                    : "bg-surface-hover/60 text-foreground-muted hover:text-foreground border-surface-border hover:bg-surface-hover"
+                )}
+              >
+                <span>{lang.flag}</span>
+                <span>{lang.name}</span>
+                <span className="text-[10px] opacity-70 hidden sm:inline">
+                  • {lang.industry}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Add Region Modal Dialog */}
       {isAddModalOpen && (

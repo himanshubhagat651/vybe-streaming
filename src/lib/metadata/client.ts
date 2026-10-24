@@ -110,11 +110,13 @@ export async function fetchByGenre(
 export async function fetchByRegion(
   regionCode: string,
   type: "all" | "movie" | "tv" = "all",
-  page: number = 1
+  page: number = 1,
+  subLang?: string
 ): Promise<PaginatedResult<MediaItem>> {
   const typeQuery = type ? `&type=${type}` : "";
+  const langQuery = subLang ? `&subLang=${encodeURIComponent(subLang)}` : "";
   const res = await fetch(
-    `/api/metadata/region?code=${encodeURIComponent(regionCode)}${typeQuery}&page=${page}`
+    `/api/metadata/region?code=${encodeURIComponent(regionCode)}${typeQuery}${langQuery}&page=${page}`
   );
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

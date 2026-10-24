@@ -31,6 +31,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: "Home", href: "/", icon: Home },
     { name: "Movies", href: "/browse?type=movie", icon: Film },
     { name: "TV Series", href: "/browse?type=tv", icon: Tv },
+    { name: "Indian Cinema", href: "/browse?region=IN", icon: Flame },
     { name: "Anime", href: "/anime", icon: Sparkles },
     { name: "Regions", href: "/browse?region=IN", icon: Globe },
     { name: "Trending", href: "/browse?sort=trending", icon: Flame },

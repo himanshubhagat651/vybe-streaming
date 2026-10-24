@@ -756,11 +756,106 @@ export class ScreenScapeProvider implements MetadataProvider {
   public async getByRegion(
     regionCode: string,
     mediaType: "all" | "movie" | "tv" = "all",
-    page: number = 1
+    page: number = 1,
+    subLang?: string
   ): Promise<PaginatedResult<MediaItem>> {
     const code = (regionCode || "all").toUpperCase();
     if (code === "ALL") {
       return this.getTrending(mediaType, "week", page);
+    }
+
+    // Special handling for India: Pan-India multi-language aggregation
+    if (code === "IN") {
+      const activeLang = subLang && subLang !== "all" ? subLang.toLowerCase() : null;
+
+      try {
+        if (activeLang) {
+          // Specific Indian language chosen (e.g. Telugu, Tamil, Hindi, Malayalam, Kannada)
+          const targetType = mediaType === "all" ? "movie" : mediaType;
+          const res = await fetch(
+            `${SCREENSCAPE_BASE_API}/languages/discover?lang=${activeLang}&type=${targetType}&page=${page}`,
+            {
+              headers: DEFAULT_HEADERS,
+              next: { revalidate: 3600 },
+            }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const results = (data.results || []).map((r: any) =>
+              this.mapScreenScapeItem(r, targetType)
+            );
+            return {
+              page: data.page || page,
+              totalPages: data.total_pages || 1,
+              totalResults: data.total_results || results.length,
+              results,
+            };
+          }
+        } else {
+          // Pan-India: Fetch all major Indian cinema industries concurrently & interleave
+          const indianLangs = ["hi", "te", "ta", "ml", "kn"];
+          const moviePromises = (mediaType === "all" || mediaType === "movie")
+            ? indianLangs.map((l) =>
+                fetch(
+                  `${SCREENSCAPE_BASE_API}/languages/discover?lang=${l}&type=movie&page=${page}`,
+                  { headers: DEFAULT_HEADERS, next: { revalidate: 3600 } }
+                )
+                  .then((r) => (r.ok ? r.json() : { results: [] }))
+                  .catch(() => ({ results: [] }))
+              )
+            : [];
+
+          const tvPromise = (mediaType === "all" || mediaType === "tv")
+            ? fetch(
+                `${SCREENSCAPE_BASE_API}/languages/discover?lang=hi&type=tv&page=${page}`,
+                { headers: DEFAULT_HEADERS, next: { revalidate: 3600 } }
+              )
+                .then((r) => (r.ok ? r.json() : { results: [] }))
+                .catch(() => ({ results: [] }))
+            : Promise.resolve({ results: [] });
+
+          const [movieResponses, tvData] = await Promise.all([
+            Promise.all(moviePromises),
+            tvPromise,
+          ]);
+
+          const movieLists = movieResponses.map((res: any) =>
+            (res.results || []).map((r: any) => this.mapScreenScapeItem(r, "movie"))
+          );
+          const tvList = (tvData.results || []).map((r: any) =>
+            this.mapScreenScapeItem(r, "tv")
+          );
+
+          // Interleave Bollywood, Tollywood, Kollywood, Mollywood, Sandalwood, and Indian TV
+          const combined: MediaItem[] = [];
+          const seen = new Set<string>();
+          const maxCount = Math.max(...movieLists.map((l) => l.length), tvList.length);
+
+          for (let i = 0; i < maxCount; i++) {
+            for (const list of movieLists) {
+              if (i < list.length && !seen.has(list[i].id)) {
+                seen.add(list[i].id);
+                combined.push(list[i]);
+              }
+            }
+            if (i < tvList.length && !seen.has(tvList[i].id)) {
+              seen.add(tvList[i].id);
+              combined.push(tvList[i]);
+            }
+          }
+
+          if (combined.length > 0) {
+            return {
+              page,
+              totalPages: 35,
+              totalResults: 900,
+              results: combined,
+            };
+          }
+        }
+      } catch (err) {
+        console.warn("ScreenScapeProvider.getByRegion(IN) multi-language error:", err);
+      }
     }
 
     const region = getRegionByCode(code);

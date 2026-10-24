@@ -9,10 +9,11 @@ export async function GET(request: NextRequest) {
     const code = searchParams.get("code") || searchParams.get("region") || "all";
     const type = (searchParams.get("type") as "all" | "movie" | "tv") || "all";
     const page = parseInt(searchParams.get("page") || "1", 10);
+    const subLang = searchParams.get("subLang") || searchParams.get("lang") || undefined;
 
     const provider = getMetadataProvider();
     if (provider.getByRegion) {
-      const data = await provider.getByRegion(code, type, page);
+      const data = await provider.getByRegion(code, type, page, subLang);
       return NextResponse.json(data);
     }
 

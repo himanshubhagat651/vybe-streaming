@@ -12,6 +12,7 @@ import { fetchTrending, fetchPopular, fetchGenres, fetchByGenre, fetchByRegion }
 import { RegionTabBar } from "@/components/media/RegionTabBar";
 import { getRegionByCode, getStoredSelectedRegion, setStoredSelectedRegion } from "@/lib/regions";
 import { ALL_GENRES, getGenreBySlug } from "@/lib/genres";
+import { getAllIndianCinema, getAllIndianSeries } from "@/lib/demoData";
 import { AlertCircle, RefreshCw, History, Play, Globe, Sparkles, ChevronDown, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useUserData } from "@/context/UserDataContext";
@@ -63,6 +64,7 @@ export default function HomePage() {
   }, [activeGenre, animeList, trendingAll]);
 
   const [selectedRegion, setSelectedRegion] = useState<string>("IN");
+  const [selectedSubLang, setSelectedSubLang] = useState<string>("all");
   const [regionalItems, setRegionalItems] = useState<MediaItem[]>([]);
   const [isRegionLoading, setIsRegionLoading] = useState<boolean>(true);
 
@@ -80,20 +82,58 @@ export default function HomePage() {
   const handleSelectRegion = (code: string) => {
     setSelectedRegion(code);
     setStoredSelectedRegion(code);
+    if (code !== "IN") {
+      setSelectedSubLang("all");
+    }
   };
 
   useEffect(() => {
     let isCancelled = false;
     setIsRegionLoading(true);
-    fetchByRegion(selectedRegion, "all", 1)
+    fetchByRegion(
+      selectedRegion,
+      "all",
+      1,
+      selectedRegion.toUpperCase() === "IN" && selectedSubLang !== "all"
+        ? selectedSubLang
+        : undefined
+    )
       .then((data) => {
         if (!isCancelled) {
-          setRegionalItems(data.results || []);
+          let res = data.results || [];
+          if (res.length === 0 && selectedRegion.toUpperCase() === "IN") {
+            const cinema = getAllIndianCinema();
+            const series = getAllIndianSeries();
+            let fallback = [...cinema, ...series];
+            if (selectedSubLang !== "all") {
+              fallback = fallback.filter((m) =>
+                m.languageAvailable?.includes(selectedSubLang) ||
+                (selectedSubLang === "hi" && m.languageAvailable?.includes("hindi"))
+              );
+            }
+            res = fallback;
+          }
+          setRegionalItems(res);
         }
       })
       .catch((err) => {
         console.warn("fetchByRegion error:", err);
-        if (!isCancelled) setRegionalItems([]);
+        if (!isCancelled) {
+          if (selectedRegion.toUpperCase() === "IN") {
+            const cinema = getAllIndianCinema();
+            const series = getAllIndianSeries();
+            let fallback = [...cinema, ...series];
+            if (selectedSubLang !== "all") {
+              fallback = fallback.filter((m) =>
+                m.languageAvailable?.includes(selectedSubLang) ||
+                (selectedSubLang === "hi" && m.languageAvailable?.includes("hindi"))
+              );
+            }
+            setRegionalItems(fallback);
+          } else {
+            setRegionalItems([]);
+          }
+        }
       })
       .finally(() => {
         if (!isCancelled) setIsRegionLoading(false);
@@ -102,7 +142,7 @@ export default function HomePage() {
     return () => {
       isCancelled = true;
     };
-  }, [selectedRegion]);
+  }, [selectedRegion, selectedSubLang]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -404,6 +444,8 @@ export default function HomePage() {
               <RegionTabBar
                 selectedRegion={selectedRegion}
                 onSelectRegion={handleSelectRegion}
+                selectedSubLang={selectedSubLang}
+                onSelectSubLang={setSelectedSubLang}
                 title="Regional Spotlight"
               />
 
@@ -466,6 +508,24 @@ export default function HomePage() {
               onOpenInfo={(item) => setSelectedMedia(item)}
             />
           )}
+
+          {/* Dedicated Indian Cinema Row (Pan-India: Bollywood, Tollywood, Kollywood, Mollywood, Sandalwood) */}
+          <MediaRow
+            title="🇮🇳 Desi Hits & Pan-Indian Cinema"
+            subtitle="Blockbusters across Bollywood, Tollywood, Kollywood, Mollywood & Sandalwood"
+            items={getAllIndianCinema()}
+            viewAllHref="/browse?region=IN"
+            onOpenInfo={(item) => setSelectedMedia(item)}
+          />
+
+          {/* Dedicated Indian Web Series & OTT Hits */}
+          <MediaRow
+            title="🇮🇳 Top Indian Web Series & OTT Hits"
+            subtitle="Binge-worthy Indian crime thrillers, drama, and comedy series"
+            items={getAllIndianSeries()}
+            viewAllHref="/browse?region=IN&type=tv"
+            onOpenInfo={(item) => setSelectedMedia(item)}
+          />
 
           {/* Popular Movies Row */}
           <MediaRow
