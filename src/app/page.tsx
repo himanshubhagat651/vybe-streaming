@@ -7,8 +7,10 @@ import { HeroBanner } from "@/components/media/HeroBanner";
 import { MediaRow } from "@/components/media/MediaRow";
 import { MediaModal } from "@/components/media/MediaModal";
 import { MediaCardSkeleton } from "@/components/ui/Skeleton";
-import { fetchTrending, fetchPopular, fetchGenres, fetchByGenre } from "@/lib/metadata/client";
-import { AlertCircle, RefreshCw, History, Play } from "lucide-react";
+import { fetchTrending, fetchPopular, fetchGenres, fetchByGenre, fetchByRegion } from "@/lib/metadata/client";
+import { RegionTabBar } from "@/components/media/RegionTabBar";
+import { getRegionByCode, getStoredSelectedRegion, setStoredSelectedRegion } from "@/lib/regions";
+import { AlertCircle, RefreshCw, History, Play, Globe } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useUserData } from "@/context/UserDataContext";
 
@@ -29,8 +31,47 @@ export default function HomePage() {
   const [genres, setGenres] = useState<Genre[]>([]);
   const [activeGenre, setActiveGenre] = useState("all");
 
+  const [selectedRegion, setSelectedRegion] = useState<string>("IN");
+  const [regionalItems, setRegionalItems] = useState<MediaItem[]>([]);
+  const [isRegionLoading, setIsRegionLoading] = useState<boolean>(true);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize stored region preference from localStorage on mount
+  useEffect(() => {
+    const stored = getStoredSelectedRegion();
+    if (stored) {
+      setSelectedRegion(stored);
+    }
+  }, []);
+
+  const handleSelectRegion = (code: string) => {
+    setSelectedRegion(code);
+    setStoredSelectedRegion(code);
+  };
+
+  useEffect(() => {
+    let isCancelled = false;
+    setIsRegionLoading(true);
+    fetchByRegion(selectedRegion, "all", 1)
+      .then((data) => {
+        if (!isCancelled) {
+          setRegionalItems(data.results || []);
+        }
+      })
+      .catch((err) => {
+        console.warn("fetchByRegion error:", err);
+        if (!isCancelled) setRegionalItems([]);
+      })
+      .finally(() => {
+        if (!isCancelled) setIsRegionLoading(false);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedRegion]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -254,6 +295,46 @@ export default function HomePage() {
               />
             </div>
           )}
+
+          {/* Regional Cinema & Shows Spotlight Tab Section */}
+          <div className="space-y-4 pt-1">
+            <div className="rounded-3xl bg-surface/50 border border-surface-border/60 p-4 sm:p-5 backdrop-blur-sm space-y-4 shadow-sm">
+              <RegionTabBar
+                selectedRegion={selectedRegion}
+                onSelectRegion={handleSelectRegion}
+                title="Regional Spotlight"
+              />
+
+              <div className="pt-1">
+                {isRegionLoading ? (
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="flex-none w-[145px] xs:w-[160px] sm:w-[185px] md:w-[200px] aspect-poster rounded-2xl bg-surface-hover shimmer"
+                      />
+                    ))}
+                  </div>
+                ) : regionalItems.length > 0 ? (
+                  <MediaRow
+                    title={`${getRegionByCode(selectedRegion)?.flag || "🌍"} ${
+                      getRegionByCode(selectedRegion)?.name || "Regional"
+                    } Cinema & Shows`}
+                    subtitle={`Trending releases, blockbuster hits, and local productions from ${
+                      getRegionByCode(selectedRegion)?.name || "this region"
+                    }`}
+                    items={regionalItems}
+                    viewAllHref={`/browse?region=${selectedRegion}`}
+                    onOpenInfo={(item) => setSelectedMedia(item)}
+                  />
+                ) : (
+                  <div className="py-8 text-center text-xs text-foreground-muted">
+                    No regional titles currently available for {getRegionByCode(selectedRegion)?.name}.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Trending Today Row */}
           <MediaRow

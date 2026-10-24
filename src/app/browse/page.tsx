@@ -8,8 +8,10 @@ import { MediaModal } from "@/components/media/MediaModal";
 import { MediaCardSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
-import { fetchTrending, fetchPopular, fetchGenres, fetchByGenre } from "@/lib/metadata/client";
-import { AlertCircle, ChevronLeft, ChevronRight, Film, Flame, RefreshCw, Sparkles, Tv } from "lucide-react";
+import { fetchTrending, fetchPopular, fetchGenres, fetchByGenre, fetchByRegion } from "@/lib/metadata/client";
+import { RegionTabBar } from "@/components/media/RegionTabBar";
+import { getRegionByCode } from "@/lib/regions";
+import { AlertCircle, ChevronLeft, ChevronRight, Film, Flame, Globe, RefreshCw, Sparkles, Tv } from "lucide-react";
 
 function BrowseContent() {
   const router = useRouter();
@@ -17,12 +19,14 @@ function BrowseContent() {
 
   const typeParam = (searchParams.get("type") as "movie" | "tv" | "all") || "all";
   const genreParam = searchParams.get("genre") || "all";
+  const regionParam = searchParams.get("region") || "all";
   const sortParam = (searchParams.get("sort") as "trending" | "popular") || (searchParams.get("type") ? "trending" : "trending");
   const pageParam = parseInt(searchParams.get("page") || "1", 10);
 
   const [filterType, setFilterType] = useState<"movie" | "tv" | "all">(typeParam);
   const [filterSort, setFilterSort] = useState<"trending" | "popular">(sortParam);
   const [filterGenre, setFilterGenre] = useState<string>(genreParam);
+  const [filterRegion, setFilterRegion] = useState<string>(regionParam);
   const [currentPage, setCurrentPage] = useState<number>(pageParam);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [genres, setGenres] = useState<Genre[]>([]);
@@ -32,15 +36,19 @@ function BrowseContent() {
   const [error, setError] = useState<string | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
 
+  const activeRegionObj = filterRegion !== "all" ? getRegionByCode(filterRegion) : null;
+
   // Sync state whenever URL query params change (e.g. sidebar navigation)
   useEffect(() => {
     const currentType = (searchParams.get("type") as "movie" | "tv" | "all") || "all";
     const currentGenre = searchParams.get("genre") || "all";
+    const currentRegion = searchParams.get("region") || "all";
     const currentSort = (searchParams.get("sort") as "trending" | "popular") || (searchParams.get("type") === "tv" ? "trending" : "trending");
     const currentPageNum = parseInt(searchParams.get("page") || "1", 10);
 
     setFilterType(currentType);
     setFilterGenre(currentGenre);
+    setFilterRegion(currentRegion);
     setFilterSort(currentSort);
     setCurrentPage(currentPageNum);
   }, [searchParams]);
@@ -61,13 +69,16 @@ function BrowseContent() {
     type: "movie" | "tv" | "all",
     sort: "trending" | "popular",
     page: number,
-    genre: string
+    genre: string,
+    region: string
   ) => {
     setIsLoading(true);
     setError(null);
     try {
       let data;
-      if (genre && genre !== "all") {
+      if (region && region !== "all") {
+        data = await fetchByRegion(region, type, page);
+      } else if (genre && genre !== "all") {
         data = await fetchByGenre(genre, type === "all" ? undefined : type, page);
       } else if (sort === "trending") {
         data = await fetchTrending(type, "week", page);
@@ -99,14 +110,21 @@ function BrowseContent() {
   };
 
   useEffect(() => {
-    loadData(filterType, filterSort, currentPage, filterGenre);
-  }, [filterType, filterSort, currentPage, filterGenre]);
+    loadData(filterType, filterSort, currentPage, filterGenre, filterRegion);
+  }, [filterType, filterSort, currentPage, filterGenre, filterRegion]);
 
-  const updateUrl = (newType: "movie" | "tv" | "all", newSort: "trending" | "popular", newGenre: string, newPage: number) => {
+  const updateUrl = (
+    newType: "movie" | "tv" | "all",
+    newSort: "trending" | "popular",
+    newGenre: string,
+    newPage: number,
+    newRegion: string
+  ) => {
     const params = new URLSearchParams();
     if (newType !== "all") params.set("type", newType);
     if (newSort !== "trending") params.set("sort", newSort);
     if (newGenre !== "all") params.set("genre", newGenre);
+    if (newRegion !== "all") params.set("region", newRegion);
     if (newPage > 1) params.set("page", String(newPage));
 
     const queryString = params.toString();
@@ -116,74 +134,111 @@ function BrowseContent() {
   const handleTypeChange = (newType: "movie" | "tv" | "all") => {
     setFilterType(newType);
     setCurrentPage(1);
-    updateUrl(newType, filterSort, filterGenre, 1);
+    updateUrl(newType, filterSort, filterGenre, 1, filterRegion);
   };
 
   const handleSortChange = (newSort: "trending" | "popular") => {
     setFilterSort(newSort);
     setCurrentPage(1);
-    updateUrl(filterType, newSort, filterGenre, 1);
+    updateUrl(filterType, newSort, filterGenre, 1, filterRegion);
   };
 
   const handleGenreChange = (newGenre: string) => {
     const target = filterGenre === newGenre ? "all" : newGenre;
     setFilterGenre(target);
     setCurrentPage(1);
-    updateUrl(filterType, filterSort, target, 1);
+    updateUrl(filterType, filterSort, target, 1, filterRegion);
+  };
+
+  const handleRegionChange = (newRegion: string) => {
+    setFilterRegion(newRegion);
+    setCurrentPage(1);
+    updateUrl(filterType, filterSort, filterGenre, 1, newRegion);
   };
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > totalPages) return;
     setCurrentPage(newPage);
-    updateUrl(filterType, filterSort, filterGenre, newPage);
+    updateUrl(filterType, filterSort, filterGenre, newPage, filterRegion);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div className="space-y-8 animate-fadeIn pb-16">
       {/* Browse Header */}
-      <div className="space-y-3">
-        <h1 className="text-3xl font-black text-foreground flex items-center gap-2.5">
-          {filterGenre.toLowerCase() === "anime" ? (
-            <>
-              <Sparkles className="w-7 h-7 text-brand-400" />
-              <span>
-                {filterType === "tv"
-                  ? "Anime Series"
-                  : filterType === "movie"
-                  ? "Anime Movies"
-                  : "Anime Collection"}
-              </span>
-            </>
-          ) : filterType === "tv" ? (
-            <>
-              <Tv className="w-7 h-7 text-brand-400" />
-              <span>{filterSort === "trending" ? "Trending TV Series" : "Popular TV Series"}</span>
-            </>
-          ) : filterType === "movie" ? (
-            <>
-              <Film className="w-7 h-7 text-brand-400" />
-              <span>{filterSort === "trending" ? "Trending Movies" : "Popular Movies"}</span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-7 h-7 text-brand-400" />
-              <span>{filterSort === "trending" ? "Trending Entertainment" : "Popular Entertainment"}</span>
-            </>
-          )}
-        </h1>
-        <p className="text-sm text-foreground-muted max-w-xl">
-          {filterGenre.toLowerCase() === "anime"
-            ? "Stream acclaimed Japanese anime series, cyberpunk sagas, supernatural thrillers, and studio feature films."
-            : filterType === "tv"
-            ? "Discover television seasons, binge-worthy series, and global trending releases."
-            : filterType === "movie"
-            ? "Stream blockbuster movies, Hollywood cinema, and latest theatre releases."
-            : "Explore real-time trending releases and top titles indexed across ScreenScape."}
-        </p>
+      <div className="space-y-4">
+        {/* Dynamic Title */}
+        <div className="space-y-1.5">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-foreground flex flex-wrap items-center gap-2.5">
+            {activeRegionObj ? (
+              <>
+                <span className="text-3xl sm:text-4xl">{activeRegionObj.flag}</span>
+                <span>
+                  {activeRegionObj.name}{" "}
+                  {filterType === "tv"
+                    ? "Series & TV"
+                    : filterType === "movie"
+                    ? "Movies & Cinema"
+                    : "Entertainment"}
+                </span>
+                {activeRegionObj.alias && (
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-brand-500/15 text-brand-400 border border-brand-500/30 font-mono font-medium">
+                    {activeRegionObj.alias}
+                  </span>
+                )}
+              </>
+            ) : filterGenre.toLowerCase() === "anime" ? (
+              <>
+                <Sparkles className="w-7 h-7 text-brand-400" />
+                <span>
+                  {filterType === "tv"
+                    ? "Anime Series"
+                    : filterType === "movie"
+                    ? "Anime Movies"
+                    : "Anime Collection"}
+                </span>
+              </>
+            ) : filterType === "tv" ? (
+              <>
+                <Tv className="w-7 h-7 text-brand-400" />
+                <span>{filterSort === "trending" ? "Trending TV Series" : "Popular TV Series"}</span>
+              </>
+            ) : filterType === "movie" ? (
+              <>
+                <Film className="w-7 h-7 text-brand-400" />
+                <span>{filterSort === "trending" ? "Trending Movies" : "Popular Movies"}</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-7 h-7 text-brand-400" />
+                <span>{filterSort === "trending" ? "Trending Entertainment" : "Popular Entertainment"}</span>
+              </>
+            )}
+          </h1>
+          <p className="text-xs sm:text-sm text-foreground-muted max-w-2xl leading-relaxed">
+            {activeRegionObj
+              ? `Streaming regional and country-specific movies, TV series, and trending productions from ${activeRegionObj.name} (${activeRegionObj.nativeName}).`
+              : filterGenre.toLowerCase() === "anime"
+              ? "Stream acclaimed Japanese anime series, cyberpunk sagas, supernatural thrillers, and studio feature films."
+              : filterType === "tv"
+              ? "Discover television seasons, binge-worthy series, and global trending releases."
+              : filterType === "movie"
+              ? "Stream blockbuster movies, Hollywood cinema, and latest theatre releases."
+              : "Explore real-time trending releases and top titles indexed across ScreenScape."}
+          </p>
+        </div>
+
+        {/* Region Tab Section with "+ Add Region" button and customizable country tabs */}
+        <div className="pt-1 pb-1 rounded-2xl bg-surface/60 border border-surface-border/60 p-3 sm:p-4 backdrop-blur-sm">
+          <RegionTabBar
+            selectedRegion={filterRegion}
+            onSelectRegion={handleRegionChange}
+            title="Browse By Country & Region"
+          />
+        </div>
 
         {/* Filter & Sort Bar */}
-        <div className="flex flex-wrap items-center gap-3 pt-3">
+        <div className="flex flex-wrap items-center gap-3 pt-1">
           {/* Media Type Filters */}
           <div className="flex items-center gap-1 p-1 rounded-xl bg-surface border border-surface-border">
             <button
@@ -220,31 +275,33 @@ function BrowseContent() {
             </button>
           </div>
 
-          {/* Sort Filters (Trending vs Popular) */}
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-surface border border-surface-border">
-            <button
-              onClick={() => handleSortChange("trending")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                filterSort === "trending"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-foreground-muted hover:text-foreground"
-              }`}
-            >
-              <Flame className="w-3.5 h-3.5" />
-              <span>Trending</span>
-            </button>
-            <button
-              onClick={() => handleSortChange("popular")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                filterSort === "popular"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "text-foreground-muted hover:text-foreground"
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Popular</span>
-            </button>
-          </div>
+          {/* Sort Filters (Trending vs Popular) - shown when not filtering by specific region */}
+          {filterRegion === "all" && (
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-surface border border-surface-border">
+              <button
+                onClick={() => handleSortChange("trending")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  filterSort === "trending"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-foreground-muted hover:text-foreground"
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5" />
+                <span>Trending</span>
+              </button>
+              <button
+                onClick={() => handleSortChange("popular")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  filterSort === "popular"
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-foreground-muted hover:text-foreground"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Popular</span>
+              </button>
+            </div>
+          )}
 
           {/* Genre Chips */}
           {genres.length > 0 && (
@@ -284,7 +341,7 @@ function BrowseContent() {
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
-          <Button size="sm" variant="outline" onClick={() => loadData(filterType, filterSort, currentPage, filterGenre)}>
+          <Button size="sm" variant="outline" onClick={() => loadData(filterType, filterSort, currentPage, filterGenre, filterRegion)}>
             <RefreshCw className="w-3.5 h-3.5 mr-1" />
             Retry
           </Button>
@@ -342,13 +399,39 @@ function BrowseContent() {
         </>
       ) : (
         <EmptyState
-          icon={<Tv className="w-10 h-10" />}
-          title="No titles available"
-          description="We couldn't find any titles in this category."
-          actionText="View Trending TV Series"
+          icon={
+            activeRegionObj ? (
+              <span className="text-5xl">{activeRegionObj.flag}</span>
+            ) : (
+              <Tv className="w-10 h-10" />
+            )
+          }
+          title={
+            activeRegionObj
+              ? `No titles found for ${activeRegionObj.name}`
+              : "No titles available"
+          }
+          description={
+            activeRegionObj
+              ? `We couldn't find ${
+                  filterType === "all"
+                    ? "entertainment"
+                    : filterType === "tv"
+                    ? "TV series"
+                    : "movies"
+                } for ${activeRegionObj.name} in this combination.`
+              : "We couldn't find any titles in this category."
+          }
+          actionText={
+            activeRegionObj ? "Explore All Regions" : "View Trending TV Series"
+          }
           onAction={() => {
-            handleTypeChange("tv");
-            handleSortChange("trending");
+            if (activeRegionObj) {
+              handleRegionChange("all");
+            } else {
+              handleTypeChange("tv");
+              handleSortChange("trending");
+            }
           }}
         />
       )}

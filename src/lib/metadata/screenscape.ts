@@ -1,6 +1,7 @@
 import { MetadataProvider } from "./provider";
 import { MediaItem, Genre, PaginatedResult, ProviderStatus, Season } from "../types";
 import { DEMO_MEDIA, DEMO_GENRES } from "../demoData";
+import { getRegionByCode } from "../regions";
 
 const SCREENSCAPE_BASE_API = "https://web.screenscape.fun/api";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
@@ -745,6 +746,108 @@ export class ScreenScapeProvider implements MetadataProvider {
         duration: "45m",
       })),
     };
+  }
+
+  /**
+   * Retrieves content specific to a geographic region or country.
+   * Maps region code to ISO language and queries ScreenScape languages/discover endpoint,
+   * with automatic fallback and interleaving of TV series and movies when mediaType is "all".
+   */
+  public async getByRegion(
+    regionCode: string,
+    mediaType: "all" | "movie" | "tv" = "all",
+    page: number = 1
+  ): Promise<PaginatedResult<MediaItem>> {
+    const code = (regionCode || "all").toUpperCase();
+    if (code === "ALL") {
+      return this.getTrending(mediaType, "week", page);
+    }
+
+    const region = getRegionByCode(code);
+    const lang = region?.lang || "en";
+
+    try {
+      if (mediaType === "movie" || mediaType === "tv") {
+        const res = await fetch(
+          `${SCREENSCAPE_BASE_API}/languages/discover?lang=${lang}&type=${mediaType}&page=${page}`,
+          {
+            headers: DEFAULT_HEADERS,
+            next: { revalidate: 3600 },
+          }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const results = (data.results || []).map((r: any) =>
+            this.mapScreenScapeItem(r, mediaType)
+          );
+          return {
+            page: data.page || page,
+            totalPages: data.total_pages || 1,
+            totalResults: data.total_results || results.length,
+            results,
+          };
+        }
+      } else {
+        // "all": fetch both movies and TV for this region
+        const [movieRes, tvRes] = await Promise.all([
+          fetch(
+            `${SCREENSCAPE_BASE_API}/languages/discover?lang=${lang}&type=movie&page=${page}`,
+            {
+              headers: DEFAULT_HEADERS,
+              next: { revalidate: 3600 },
+            }
+          ).catch(() => null),
+          fetch(
+            `${SCREENSCAPE_BASE_API}/languages/discover?lang=${lang}&type=tv&page=${page}`,
+            {
+              headers: DEFAULT_HEADERS,
+              next: { revalidate: 3600 },
+            }
+          ).catch(() => null),
+        ]);
+
+        const movieData = movieRes && movieRes.ok ? await movieRes.json() : null;
+        const tvData = tvRes && tvRes.ok ? await tvRes.json() : null;
+
+        const movieResults = (movieData?.results || []).map((r: any) =>
+          this.mapScreenScapeItem(r, "movie")
+        );
+        const tvResults = (tvData?.results || []).map((r: any) =>
+          this.mapScreenScapeItem(r, "tv")
+        );
+
+        const combined: MediaItem[] = [];
+        const seen = new Set<string>();
+        const maxLen = Math.max(movieResults.length, tvResults.length);
+        for (let i = 0; i < maxLen; i++) {
+          if (i < movieResults.length && !seen.has(movieResults[i].id)) {
+            seen.add(movieResults[i].id);
+            combined.push(movieResults[i]);
+          }
+          if (i < tvResults.length && !seen.has(tvResults[i].id)) {
+            seen.add(tvResults[i].id);
+            combined.push(tvResults[i]);
+          }
+        }
+
+        const totalPages = Math.max(movieData?.total_pages || 1, tvData?.total_pages || 1);
+        const totalResults = (movieData?.total_results || 0) + (tvData?.total_results || 0);
+
+        if (combined.length > 0) {
+          return {
+            page,
+            totalPages,
+            totalResults: totalResults || combined.length,
+            results: combined,
+          };
+        }
+      }
+    } catch (err) {
+      console.warn(`ScreenScapeProvider.getByRegion(${regionCode}) error:`, err);
+    }
+
+    // Fallback to trending
+    return this.getTrending(mediaType, "week", page);
   }
 
   public async getGenres(_mediaType?: "movie" | "tv"): Promise<Genre[]> {

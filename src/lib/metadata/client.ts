@@ -106,3 +106,19 @@ export async function fetchByGenre(
   }
   return await res.json();
 }
+
+export async function fetchByRegion(
+  regionCode: string,
+  type: "all" | "movie" | "tv" = "all",
+  page: number = 1
+): Promise<PaginatedResult<MediaItem>> {
+  const typeQuery = type ? `&type=${type}` : "";
+  const res = await fetch(
+    `/api/metadata/region?code=${encodeURIComponent(regionCode)}${typeQuery}&page=${page}`
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `HTTP ${res.status}`);
+  }
+  return await res.json();
+}

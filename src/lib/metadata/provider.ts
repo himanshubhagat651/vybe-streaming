@@ -28,6 +28,12 @@ export interface MetadataProvider {
     page?: number
   ): Promise<PaginatedResult<MediaItem>>;
 
+  getByRegion?(
+    regionCode: string,
+    mediaType?: "all" | "movie" | "tv",
+    page?: number
+  ): Promise<PaginatedResult<MediaItem>>;
+
   getDetails(
     id: string | number,
     mediaType: "movie" | "tv"
