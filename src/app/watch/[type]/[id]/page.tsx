@@ -386,7 +386,6 @@ function WatchPageContent() {
           season={activeSeason}
           episode={activeEpisode}
           year={media.releaseYear}
-          officialDownloadUrl={`https://web.screenscape.fun/download/${mediaType}/${actualTmdbId}`}
         />
       )}
     </div>

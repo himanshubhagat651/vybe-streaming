@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Magnet,
@@ -44,6 +45,11 @@ export function TorrentFallbackModal({
   const [error, setError] = useState<string | null>(null);
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
   const [filterRes, setFilterRes] = useState<string>("all");
+  const [mounted, setMounted] = useState<boolean>(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -75,7 +81,7 @@ export function TorrentFallbackModal({
     };
   }, [isOpen, title, type, year, season, episode]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const handleCopy = (hash: string, magnetUrl: string) => {
     navigator.clipboard.writeText(magnetUrl);
@@ -100,8 +106,8 @@ export function TorrentFallbackModal({
     return true;
   });
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-background/80 backdrop-blur-md animate-fadeIn select-none">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-background/80 backdrop-blur-md select-none">
       <div className="relative w-full max-w-2xl 2xl:max-w-3xl bg-surface border border-surface-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Modal Header */}
         <div className="px-5 py-4 border-b border-surface-border flex items-center justify-between bg-surface-hover/30">
@@ -296,6 +302,7 @@ export function TorrentFallbackModal({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

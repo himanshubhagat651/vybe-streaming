@@ -22,7 +22,6 @@ import { DownloadCenterModal } from "./DownloadCenterModal";
 import { MediaType, SupportedLanguage } from "@/lib/types";
 import {
   buildScreenScapeEmbedUrl,
-  buildScreenScapeDownloadUrl,
   PLAYER_SERVERS,
   SUPPORTED_LANGUAGES,
   DEFAULT_PLAYER_BASE_URL,
@@ -247,10 +246,6 @@ export function ScreenScapePlayer({
     setIsEmbedReady(false);
     setReloadKey((prev) => prev + 1);
   };
-
-  const downloadUrl = validation.isValid && validation.sanitizedTmdbId
-    ? buildScreenScapeDownloadUrl(validation.sanitizedTmdbId, type)
-    : null;
 
   return (
     <div className={`space-y-3.5 select-none ${className}`}>
@@ -513,7 +508,6 @@ export function ScreenScapePlayer({
         title={title}
         season={numericSeason}
         episode={numericEpisode}
-        officialDownloadUrl={downloadUrl}
       />
     </div>
   );
