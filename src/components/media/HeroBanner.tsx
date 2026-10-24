@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Play, Info, Star, Sparkles, Film, Tv, ChevronLeft, ChevronRight } from "lucide-react";
+import { Play, Info, Star, Sparkles, Film, Tv, ChevronLeft, ChevronRight, Dices } from "lucide-react";
 import { MediaItem } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { SurpriseMeModal } from "./SurpriseMeModal";
+import { playDice, playPop } from "@/lib/audio";
+import { cn } from "@/lib/utils";
 
 interface HeroBannerProps {
   media?: MediaItem;
@@ -22,6 +25,7 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isSurpriseOpen, setIsSurpriseOpen] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const activeMedia = spotlightItems[currentIndex] || media;
@@ -168,47 +172,115 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
               More Details
             </Button>
           )}
+
+          <Button
+            size="md"
+            variant="glass"
+            onClick={() => {
+              playDice();
+              setIsSurpriseOpen(true);
+            }}
+            className="sm:h-12 sm:px-5 2xl:h-14 2xl:px-7 bg-white/10 hover:bg-white/20 text-white backdrop-blur-xl border border-white/20 hover:scale-105 transition-all text-xs sm:text-sm font-semibold min-h-[44px]"
+          >
+            <Dices className="w-4 h-4 mr-1.5 text-amber-400" />
+            Surprise Me
+          </Button>
         </div>
       </div>
 
-      {/* Slide Navigation Controls (Only if multiple items exist) */}
+      {/* Slide Navigation Controls & Interactive Mini-Thumbnails */}
       {spotlightItems.length > 1 && (
-        <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 md:bottom-12 md:right-12 z-20 flex items-center gap-2 sm:gap-3">
-          {/* Slide Indicator Pills */}
-          <div className="flex items-center gap-1 sm:gap-1.5 bg-black/50 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-white/10">
-            {spotlightItems.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentIndex(idx)}
-                aria-label={`Go to slide ${idx + 1}`}
-                className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
-                  idx === currentIndex
-                    ? "w-5 sm:w-7 bg-brand-400 shadow-md shadow-brand-400/50"
-                    : "w-1.5 sm:w-2 bg-white/30 hover:bg-white/60"
-                }`}
-              />
-            ))}
+        <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 md:bottom-10 md:right-10 z-20 flex flex-col items-end gap-2.5">
+          {/* Interactive Mini-Poster Thumbnails Carousel */}
+          <div className="hidden lg:flex items-center gap-2 bg-black/60 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-2xl">
+            {spotlightItems.map((item, idx) => {
+              const isSelected = idx === currentIndex;
+              return (
+                <button
+                  key={item.tmdbId}
+                  onClick={() => {
+                    playPop();
+                    setCurrentIndex(idx);
+                  }}
+                  onMouseEnter={() => {
+                    playPop();
+                    setCurrentIndex(idx);
+                  }}
+                  title={item.title}
+                  className={cn(
+                    "relative w-10 h-14 rounded-xl overflow-hidden transition-all duration-300 border-2 select-none",
+                    isSelected
+                      ? "border-brand-400 scale-110 shadow-lg shadow-brand-500/50 ring-2 ring-brand-400/30"
+                      : "border-transparent opacity-50 hover:opacity-100 hover:scale-105"
+                  )}
+                >
+                  <img
+                    src={item.posterUrl || item.backdropUrl || ""}
+                    alt={item.title}
+                    className="w-full h-full object-cover"
+                  />
+                  {isSelected && (
+                    <div className="absolute inset-0 bg-brand-500/15 pointer-events-none" />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Left / Right Arrow Buttons */}
-          <div className="flex items-center gap-1 bg-black/50 backdrop-blur-md p-0.5 sm:p-1 rounded-full border border-white/10">
-            <button
-              onClick={prevSlide}
-              aria-label="Previous slide"
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 transition-all min-h-[28px] min-w-[28px]"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={nextSlide}
-              aria-label="Next slide"
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 transition-all min-h-[28px] min-w-[28px]"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Slide Indicator Pills */}
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-black/50 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full border border-white/10">
+              {spotlightItems.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    playPop();
+                    setCurrentIndex(idx);
+                  }}
+                  aria-label={`Go to slide ${idx + 1}`}
+                  className={`h-1.5 sm:h-2 rounded-full transition-all duration-300 ${
+                    idx === currentIndex
+                      ? "w-5 sm:w-7 bg-brand-400 shadow-md shadow-brand-400/50"
+                      : "w-1.5 sm:w-2 bg-white/30 hover:bg-white/60"
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Left / Right Arrow Buttons */}
+            <div className="flex items-center gap-1 bg-black/50 backdrop-blur-md p-0.5 sm:p-1 rounded-full border border-white/10">
+              <button
+                onClick={() => {
+                  playPop();
+                  prevSlide();
+                }}
+                aria-label="Previous slide"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 transition-all min-h-[28px] min-w-[28px]"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  playPop();
+                  nextSlide();
+                }}
+                aria-label="Next slide"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 transition-all min-h-[28px] min-w-[28px]"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}
+
+      {/* Interactive Surprise Me Modal */}
+      <SurpriseMeModal
+        isOpen={isSurpriseOpen}
+        onClose={() => setIsSurpriseOpen(false)}
+        candidateItems={spotlightItems}
+        onOpenDetails={onOpenInfo}
+      />
     </div>
   );
 }

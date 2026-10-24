@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Play, Star, Bookmark, Check, Info, Film, Tv } from "lucide-react";
+import { Play, Star, Bookmark, Check, Info, Film, Tv, Heart } from "lucide-react";
 import { MediaItem } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { cn } from "@/lib/utils";
 import { useUserData } from "@/context/UserDataContext";
+import { playPop, playHeart } from "@/lib/audio";
 
 interface MediaCardProps {
   media: MediaItem;
@@ -18,6 +19,30 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
   const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useUserData();
   const [imgError, setImgError] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`vybe_liked_${media.type}_${media.tmdbId}`);
+      if (stored === "true") setIsLiked(true);
+    } catch {}
+  }, [media.tmdbId, media.type]);
+
+  const toggleLike = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const next = !isLiked;
+    setIsLiked(next);
+    try {
+      if (next) {
+        localStorage.setItem(`vybe_liked_${media.type}_${media.tmdbId}`, "true");
+        playHeart();
+      } else {
+        localStorage.removeItem(`vybe_liked_${media.type}_${media.tmdbId}`);
+        playPop();
+      }
+    } catch {}
+  };
 
   const isBookmarked = isInWatchlist(media.tmdbId, media.type);
 
@@ -26,6 +51,7 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
     e.stopPropagation();
     if (isBookmarked) {
       await removeFromWatchlist(media.tmdbId, media.type);
+      playPop();
     } else {
       await addToWatchlist({
         tmdbId: media.tmdbId,
@@ -36,12 +62,14 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
         voteAverage: media.rating,
         releaseYear: media.releaseYear,
       });
+      playHeart();
     }
   };
 
   const handleInfo = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    playPop();
     if (onOpenInfo) {
       onOpenInfo(media);
     }
@@ -96,7 +124,14 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
             <Badge variant="outline">NR</Badge>
           )}
 
-          <Badge variant="quality">{media.quality || "4K"}</Badge>
+          <div className="flex items-center gap-1.5">
+            {isLiked && (
+              <span className="p-1 rounded-full bg-rose-500/90 text-white shadow-md shadow-rose-500/40 animate-scaleUp">
+                <Heart className="w-2.5 h-2.5 fill-current" />
+              </span>
+            )}
+            <Badge variant="quality">{media.quality || "4K"}</Badge>
+          </div>
         </div>
 
         {/* Hover Center Play Button */}
@@ -108,6 +143,18 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
 
         {/* Bottom Hover Actions */}
         <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-1 group-hover:translate-y-0 z-10">
+          <button
+            onClick={toggleLike}
+            aria-label={isLiked ? "Unlike title" : "Like title"}
+            className={cn(
+              "w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-xl transition-all hover:scale-110 active:scale-90 shadow-lg",
+              isLiked
+                ? "bg-rose-600 text-white shadow-rose-600/40"
+                : "bg-black/60 hover:bg-black/80 text-white/90 border border-white/10"
+            )}
+          >
+            <Heart className={cn("w-3.5 h-3.5", isLiked ? "fill-current" : "")} />
+          </button>
           <button
             onClick={toggleBookmark}
             aria-label={isBookmarked ? "Remove from watchlist" : "Add to watchlist"}

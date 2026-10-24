@@ -5,6 +5,7 @@ import { Navbar } from "./Navbar";
 import { Sidebar } from "./Sidebar";
 import { MobileNav } from "./MobileNav";
 import { Footer } from "./Footer";
+import { FloatingSurpriseButton } from "@/components/media/FloatingSurpriseButton";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -66,6 +67,9 @@ export function AppShell({ children }: AppShellProps) {
 
       {/* Mobile Navigation Dock */}
       <MobileNav />
+
+      {/* Interactive Floating Surprise Me Action Button */}
+      <FloatingSurpriseButton />
     </div>
   );
 }

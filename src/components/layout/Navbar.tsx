@@ -22,6 +22,9 @@ import {
   Check,
   ChevronDown,
   Sparkles,
+  Volume2,
+  VolumeX,
+  Dices,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
@@ -29,6 +32,8 @@ import { useUserData } from "@/context/UserDataContext";
 import { fetchSearch } from "@/lib/metadata/client";
 import { MediaItem, SupportedLanguage } from "@/lib/types";
 import { ALL_GENRES } from "@/lib/genres";
+import { isSoundEnabled, setSoundEnabled, playPop, playDice } from "@/lib/audio";
+import { SurpriseMeModal } from "@/components/media/SurpriseMeModal";
 import { cn } from "@/lib/utils";
 
 interface NavbarProps {
@@ -56,6 +61,18 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
   const [isGenreOpen, setIsGenreOpen] = useState(false);
   const [isSearchOpenMobile, setIsSearchOpenMobile] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [soundOn, setSoundOn] = useState(false);
+  const [isSurpriseOpen, setIsSurpriseOpen] = useState(false);
+
+  useEffect(() => {
+    setSoundOn(isSoundEnabled());
+  }, []);
+
+  const toggleSound = () => {
+    const next = !soundOn;
+    setSoundOn(next);
+    setSoundEnabled(next);
+  };
 
   const profileRef = useRef<HTMLDivElement>(null);
   const genreDropdownRef = useRef<HTMLDivElement>(null);
@@ -379,7 +396,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
         </div>
 
         {/* Right: Actions, Theme Switcher & Profile Dropdown */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-2.5">
           {/* Mobile Search Toggle */}
           <button
             onClick={() => setIsSearchOpenMobile(!isSearchOpenMobile)}
@@ -389,9 +406,43 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
             {isSearchOpenMobile ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
           </button>
 
+          {/* Surprise Me Quick Action (Desktop) */}
+          <button
+            onClick={() => {
+              playDice();
+              setIsSurpriseOpen(true);
+            }}
+            title="Surprise Me (Random Pick)"
+            aria-label="Surprise Me"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-brand-600/20 via-indigo-600/20 to-purple-600/20 hover:from-brand-600/30 hover:to-indigo-600/30 text-brand-300 border border-brand-500/30 hover:border-brand-500/50 text-xs font-semibold shadow-sm transition-all hover:scale-105 active:scale-95"
+          >
+            <Dices className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden xl:inline">Surprise Me</span>
+          </button>
+
+          {/* Interactive Sound FX Toggle */}
+          <button
+            onClick={toggleSound}
+            aria-label={soundOn ? "Mute UI sound effects" : "Enable UI sound effects"}
+            title={soundOn ? "UI Sounds: ON (Click to Mute)" : "UI Sounds: OFF (Click to Enable)"}
+            className={cn(
+              "p-2 rounded-xl transition-all",
+              soundOn
+                ? "text-brand-400 bg-brand-500/10 border border-brand-500/20 shadow-sm"
+                : "text-foreground-muted hover:text-foreground hover:bg-surface-hover"
+            )}
+          >
+            {soundOn ? (
+              <Volume2 className="w-4 h-4 text-brand-400 animate-pulse" />
+            ) : (
+              <VolumeX className="w-4 h-4 text-foreground-muted/70" />
+            )}
+          </button>
+
           {/* Theme Switcher Toggle */}
           <button
             onClick={() => {
+              playPop();
               const next = theme === "dark" ? "light" : "dark";
               toggleTheme();
               if (user) {
@@ -583,6 +634,11 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
           </form>
         </div>
       )}
+      {/* Interactive Surprise Me Modal */}
+      <SurpriseMeModal
+        isOpen={isSurpriseOpen}
+        onClose={() => setIsSurpriseOpen(false)}
+      />
     </header>
   );
 }

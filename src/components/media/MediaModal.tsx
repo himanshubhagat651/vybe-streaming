@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { X, Play, Star, Bookmark, Check } from "lucide-react";
+import { X, Play, Star, Bookmark, Check, Heart, Clapperboard } from "lucide-react";
 import { MediaItem } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useUserData } from "@/context/UserDataContext";
+import { playPop, playHeart, playSuccess } from "@/lib/audio";
+import { cn } from "@/lib/utils";
 
 interface MediaModalProps {
   media: MediaItem | null;
@@ -15,6 +17,22 @@ interface MediaModalProps {
 
 export function MediaModal({ media, onClose }: MediaModalProps) {
   const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useUserData();
+  const [isLiked, setIsLiked] = useState(false);
+  const [showTrailer, setShowTrailer] = useState(false);
+  const [userRating, setUserRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+
+  useEffect(() => {
+    if (media) {
+      try {
+        const liked = localStorage.getItem(`vybe_liked_${media.type}_${media.tmdbId}`) === "true";
+        setIsLiked(liked);
+        const rating = parseInt(localStorage.getItem(`vybe_rating_${media.type}_${media.tmdbId}`) || "0", 10);
+        setUserRating(rating);
+      } catch {}
+      setShowTrailer(false);
+    }
+  }, [media]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -37,6 +55,7 @@ export function MediaModal({ media, onClose }: MediaModalProps) {
   const toggleWatchlist = async () => {
     if (isBookmarked) {
       await removeFromWatchlist(media.tmdbId, media.type);
+      playPop();
     } else {
       await addToWatchlist({
         tmdbId: media.tmdbId,
@@ -47,7 +66,30 @@ export function MediaModal({ media, onClose }: MediaModalProps) {
         voteAverage: media.rating,
         releaseYear: media.releaseYear,
       });
+      playSuccess();
     }
+  };
+
+  const toggleLike = () => {
+    const next = !isLiked;
+    setIsLiked(next);
+    try {
+      if (next) {
+        localStorage.setItem(`vybe_liked_${media.type}_${media.tmdbId}`, "true");
+        playHeart();
+      } else {
+        localStorage.removeItem(`vybe_liked_${media.type}_${media.tmdbId}`);
+        playPop();
+      }
+    } catch {}
+  };
+
+  const handleRate = (star: number) => {
+    setUserRating(star);
+    try {
+      localStorage.setItem(`vybe_rating_${media.type}_${media.tmdbId}`, String(star));
+      playSuccess();
+    } catch {}
   };
 
   const watchUrl = `/watch/${media.type}/${media.tmdbId}`;
@@ -129,11 +171,104 @@ export function MediaModal({ media, onClose }: MediaModalProps) {
               )}
             </Button>
 
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={toggleLike}
+              className={cn(
+                "transition-all",
+                isLiked ? "bg-rose-500/20 text-rose-400 border border-rose-500/40" : ""
+              )}
+            >
+              <Heart className={cn("w-4 h-4 mr-2", isLiked ? "fill-rose-500 text-rose-500" : "")} />
+              {isLiked ? "Liked" : "Like"}
+            </Button>
+
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => {
+                playPop();
+                setShowTrailer(!showTrailer);
+              }}
+              className={cn(
+                "transition-all",
+                showTrailer ? "border-brand-500 bg-brand-500/10 text-brand-400" : ""
+              )}
+            >
+              <Clapperboard className="w-4 h-4 mr-2" />
+              {showTrailer ? "Hide Trailer" : "Watch Trailer"}
+            </Button>
+
             <Link href={`/${media.type === "tv" ? "tv" : "movie"}/${media.tmdbId}`} onClick={onClose}>
               <Button size="lg" variant="ghost">
                 Full Details Page
               </Button>
             </Link>
+          </div>
+
+          {/* Embedded Trailer Player (Interactive) */}
+          {showTrailer && (
+            <div className="space-y-2 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-brand-400 flex items-center gap-1.5">
+                  <Clapperboard className="w-4 h-4" />
+                  Official Trailer Preview
+                </span>
+                <button
+                  onClick={() => setShowTrailer(false)}
+                  className="text-xs text-foreground-muted hover:text-foreground"
+                >
+                  Close Trailer
+                </button>
+              </div>
+              <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border border-brand-500/40 shadow-2xl">
+                <iframe
+                  src={`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(
+                    media.title + " " + (media.releaseYear || "") + " official trailer"
+                  )}&autoplay=1`}
+                  title={`${media.title} Official Trailer`}
+                  className="w-full h-full border-0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Interactive Rating Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-surface-hover/60 border border-surface-border">
+            <div className="flex items-center gap-2">
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+              <span className="text-xs font-bold text-foreground">Rate this title:</span>
+            </div>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  type="button"
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  onClick={() => handleRate(star)}
+                  className="p-1 hover:scale-125 transition-transform"
+                  aria-label={`Rate ${star * 2} out of 10`}
+                >
+                  <Star
+                    className={cn(
+                      "w-5 h-5 transition-colors",
+                      star <= (hoverRating || userRating)
+                        ? "fill-amber-400 text-amber-400 drop-shadow"
+                        : "text-foreground-muted/30"
+                    )}
+                  />
+                </button>
+              ))}
+              {userRating > 0 && (
+                <span className="ml-2 text-xs font-mono font-bold text-amber-400">
+                  {userRating * 2}/10 ★
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Overview */}

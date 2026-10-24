@@ -13,6 +13,7 @@ import { RegionTabBar } from "@/components/media/RegionTabBar";
 import { getRegionByCode, getStoredSelectedRegion, setStoredSelectedRegion } from "@/lib/regions";
 import { ALL_GENRES, getGenreBySlug } from "@/lib/genres";
 import { getAllIndianCinema, getAllIndianSeries } from "@/lib/demoData";
+import { playPop } from "@/lib/audio";
 import { AlertCircle, RefreshCw, History, Play, Globe, Sparkles, ChevronDown, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useUserData } from "@/context/UserDataContext";
@@ -80,6 +81,7 @@ export default function HomePage() {
   }, []);
 
   const handleSelectRegion = (code: string) => {
+    playPop();
     setSelectedRegion(code);
     setStoredSelectedRegion(code);
     if (code !== "IN") {
@@ -348,7 +350,10 @@ export default function HomePage() {
                   <button
                     key={genre.id}
                     type="button"
-                    onClick={() => setActiveGenre(genre.slug)}
+                    onClick={() => {
+                      playPop();
+                      setActiveGenre(genre.slug);
+                    }}
                     className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap transition-all duration-200 select-none active:scale-95 border ${
                       isActive
                         ? "bg-gradient-to-r from-brand-600 to-indigo-600 text-white border-brand-500/50 shadow-lg shadow-brand-600/30 scale-[1.02] font-bold"
