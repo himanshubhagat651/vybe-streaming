@@ -28,18 +28,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { watchlist, history } = useUserData();
 
   const mainLinks = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Movies", href: "/browse?type=movie", icon: Film },
-    { name: "TV Series", href: "/browse?type=tv", icon: Tv },
-    { name: "Indian Cinema", href: "/browse?region=IN", icon: Flame },
-    { name: "Anime", href: "/anime", icon: Sparkles },
-    { name: "Regions", href: "/browse?region=IN", icon: Globe },
-    { name: "Trending", href: "/browse?sort=trending", icon: Flame },
+    { name: "Home", shortName: "Home", href: "/", icon: Home },
+    { name: "Movies", shortName: "Movies", href: "/browse?type=movie", icon: Film },
+    { name: "TV Series", shortName: "Series", href: "/browse?type=tv", icon: Tv },
+    { name: "Indian Cinema", shortName: "Indian", href: "/browse?region=IN", icon: Flame },
+    { name: "Anime", shortName: "Anime", href: "/anime", icon: Sparkles },
+    { name: "Regions", shortName: "Regions", href: "/browse?region=IN", icon: Globe },
+    { name: "Trending", shortName: "Trending", href: "/browse?sort=trending", icon: Flame },
   ];
 
   const libraryLinks = [
-    { name: "Watchlist", href: "/watchlist", icon: Bookmark, badge: watchlist.length },
-    { name: "History", href: "/history", icon: History, badge: history.length },
+    { name: "Watchlist", shortName: "Watchlist", href: "/watchlist", icon: Bookmark, badge: watchlist.length },
+    { name: "History", shortName: "History", href: "/history", icon: History, badge: history.length },
   ];
 
   return (
@@ -81,11 +81,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     if (window.innerWidth < 768) onClose();
                   }}
                   className={cn(
-                    "flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                    "flex items-center rounded-xl text-sm font-medium transition-all group",
+                    isOpen
+                      ? "gap-3.5 px-3 py-2.5"
+                      : "md:justify-center md:px-1 md:py-3 md:flex-col md:gap-1.5",
                     isActive
                       ? "bg-brand-600/15 text-brand-400 font-semibold"
-                      : "text-foreground-muted hover:text-foreground hover:bg-surface-hover",
-                    !isOpen && "md:justify-center md:px-0 md:py-3 md:flex-col md:gap-1"
+                      : "text-foreground-muted hover:text-foreground hover:bg-surface-hover"
                   )}
                   title={!isOpen ? item.name : undefined}
                 >
@@ -98,10 +100,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   <span
                     className={cn(
                       "truncate transition-opacity duration-200",
-                      !isOpen && "md:text-[10px] md:font-normal"
+                      isOpen ? "text-sm" : "md:text-[10px] md:font-normal text-center w-full block"
                     )}
                   >
-                    {item.name}
+                    {!isOpen && item.shortName ? item.shortName : item.name}
                   </span>
                 </Link>
               );
@@ -129,30 +131,43 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     if (window.innerWidth < 768) onClose();
                   }}
                   className={cn(
-                    "flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all group",
+                    "flex items-center rounded-xl text-sm font-medium transition-all group relative",
+                    isOpen
+                      ? "justify-between px-3 py-2.5"
+                      : "md:justify-center md:px-1 md:py-3 md:flex-col md:gap-1.5",
                     isActive
                       ? "bg-brand-600/15 text-brand-400 font-semibold"
-                      : "text-foreground-muted hover:text-foreground hover:bg-surface-hover",
-                    !isOpen && "md:justify-center md:px-0 md:py-3 md:flex-col md:gap-1"
+                      : "text-foreground-muted hover:text-foreground hover:bg-surface-hover"
                   )}
                   title={!isOpen ? item.name : undefined}
                 >
-                  <div className="flex items-center gap-3.5">
-                    <Icon
-                      className={cn(
-                        "w-5 h-5 shrink-0 transition-transform group-hover:scale-110",
-                        isActive ? "text-brand-500" : "text-foreground-muted"
+                  <div
+                    className={cn(
+                      "flex items-center",
+                      isOpen ? "gap-3.5" : "flex-col gap-1.5 items-center justify-center w-full"
+                    )}
+                  >
+                    <div className="relative">
+                      <Icon
+                        className={cn(
+                          "w-5 h-5 shrink-0 transition-transform group-hover:scale-110",
+                          isActive ? "text-brand-500" : "text-foreground-muted"
+                        )}
+                      />
+                      {!isOpen && item.badge !== undefined && item.badge > 0 && (
+                        <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-brand-500 ring-2 ring-background" />
                       )}
-                    />
+                    </div>
                     <span
                       className={cn(
                         "truncate transition-opacity duration-200",
-                        !isOpen && "md:text-[10px] md:font-normal"
+                        isOpen ? "text-sm" : "md:text-[10px] md:font-normal text-center w-full block"
                       )}
                     >
-                      {item.name}
+                      {!isOpen && item.shortName ? item.shortName : item.name}
                     </span>
                   </div>
+
                   {isOpen && item.badge !== undefined && item.badge > 0 && (
                     <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-500/20 text-brand-400">
                       {item.badge}

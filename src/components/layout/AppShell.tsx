@@ -15,13 +15,25 @@ export function AppShell({ children }: AppShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   React.useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth >= 768) {
-      setIsSidebarOpen(true);
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("vybe_sidebar_open");
+      if (saved !== null) {
+        setIsSidebarOpen(saved === "true");
+      } else {
+        // Expanded by default on large desktops, compact rail on laptop/tablet
+        setIsSidebarOpen(window.innerWidth >= 1280);
+      }
     }
   }, []);
 
   const toggleSidebar = () => {
-    setIsSidebarOpen((prev) => !prev);
+    setIsSidebarOpen((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("vybe_sidebar_open", String(next));
+      }
+      return next;
+    });
   };
 
   const closeSidebarMobile = () => {
