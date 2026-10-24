@@ -120,7 +120,7 @@ export function TrailerBackgroundPlayer({
             key={`${provider}-${title}`}
             src={embedUrl}
             title={`${title} Official Trailer Preview (${provider})`}
-            className="w-full h-full border-0 object-cover pointer-events-none scale-[1.28] origin-center"
+            className="w-full h-full border-0 object-cover pointer-events-none scale-[1.35] sm:scale-[1.28] origin-center"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
             onError={() => {
@@ -155,9 +155,10 @@ export function TrailerBackgroundPlayer({
       {/* Cinematic Vignette Gradients */}
       {aspectRatio === "banner" && (
         <>
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent max-w-4xl 2xl:max-w-6xl pointer-events-none" />
-          <div className="absolute inset-0 bg-radial-gradient from-transparent to-background/30 pointer-events-none" />
+          {/* Vertical gradient: transparent at top so video is clear on mobile, dark at bottom for readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 via-40% to-transparent pointer-events-none" />
+          <div className="hidden sm:block absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent max-w-4xl 2xl:max-w-6xl pointer-events-none" />
+          <div className="hidden sm:block absolute inset-0 bg-radial-gradient from-transparent to-background/30 pointer-events-none" />
         </>
       )}
 
@@ -166,7 +167,7 @@ export function TrailerBackgroundPlayer({
       )}
 
       {/* Interactive Floating Video Controls */}
-      <div className="absolute top-4 right-4 z-30 flex items-center gap-2 pointer-events-auto">
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30 flex items-center gap-2 pointer-events-auto">
         {/* Sound Toggle (Mute / Unmute) */}
         <button
           type="button"

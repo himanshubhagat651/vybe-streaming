@@ -56,7 +56,7 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
 
   return (
     <div
-      className="relative w-full h-[380px] xs:h-[440px] sm:h-[500px] md:h-[560px] lg:h-[620px] 2xl:h-[700px] 3xl:h-[800px] rounded-2xl sm:rounded-3xl overflow-hidden mb-8 md:mb-12 border border-surface-border shadow-2xl select-none bg-surface-hover group"
+      className="relative w-full h-[520px] xs:h-[540px] sm:h-[500px] md:h-[560px] lg:h-[620px] 2xl:h-[700px] 3xl:h-[800px] rounded-2xl sm:rounded-3xl overflow-hidden mb-6 sm:mb-8 md:mb-12 border border-surface-border shadow-2xl select-none bg-surface-hover group"
     >
       {/* Dynamic Ambient Glow behind banner */}
       <div className="ambient-halo -top-24 -left-24 w-72 sm:w-96 2xl:w-[32rem] h-72 sm:h-96 2xl:h-[32rem] bg-brand-600/30" />
@@ -73,41 +73,41 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
       </div>
 
       {/* Hero Content Overlay (Fluid padding & typography for mobile to TV) */}
-      <div className="absolute inset-0 flex flex-col justify-end p-4 xs:p-6 sm:p-8 md:p-12 2xl:p-16 max-w-xl sm:max-w-2xl md:max-w-3xl 2xl:max-w-5xl space-y-2.5 sm:space-y-4 z-10">
+      <div className="absolute inset-0 flex flex-col justify-end p-4 xs:p-5 sm:p-8 md:p-12 2xl:p-16 max-w-full sm:max-w-2xl md:max-w-3xl 2xl:max-w-5xl space-y-2 sm:space-y-3.5 z-10 pointer-events-none">
         {/* Spotlight Pill & Badges */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-brand-500 text-white shadow-lg shadow-brand-500/40">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pointer-events-auto">
+          <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-brand-500 text-white shadow-lg shadow-brand-500/40">
             <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-pulse" />
             Spotlight Premiere
           </span>
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-red-600/30 border border-red-500/40 text-red-300 backdrop-blur-md">
+          <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-red-600/30 border border-red-500/40 text-red-300 backdrop-blur-md">
             <Clapperboard className="w-3 h-3 text-red-400" />
             Official Trailer
           </span>
           {activeMedia.rating > 0 && (
-            <Badge variant="rating" className="text-[10px] sm:text-xs">
+            <Badge variant="rating" className="text-[10px] sm:text-xs py-0.5">
               <Star className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-amber-400 text-amber-400" />
               {activeMedia.rating.toFixed(1)} Rating
             </Badge>
           )}
-          <Badge variant="quality" className="text-[9px] sm:text-[10px]">
+          <Badge variant="quality" className="text-[9px] sm:text-[10px] py-0.5 hidden xs:inline-flex">
             {activeMedia.quality || "4K Ultra HD"}
           </Badge>
           {activeMedia.releaseYear && (
-            <Badge variant="outline" className="text-[10px] sm:text-xs hidden xs:inline-flex">
+            <Badge variant="outline" className="text-[10px] sm:text-xs hidden sm:inline-flex">
               {activeMedia.releaseYear}
             </Badge>
           )}
         </div>
 
         {/* Title */}
-        <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl 2xl:text-7xl font-black tracking-tight text-white drop-shadow-md leading-tight">
+        <h1 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-6xl 2xl:text-7xl font-black tracking-tight text-white drop-shadow-md leading-tight line-clamp-2">
           {activeMedia.title}
         </h1>
 
         {/* Tagline */}
         {activeMedia.tagline && (
-          <p className="text-xs sm:text-sm md:text-base font-medium text-brand-300 italic line-clamp-1">
+          <p className="text-xs sm:text-sm md:text-base font-medium text-brand-300 italic line-clamp-1 hidden xs:block">
             &ldquo;{activeMedia.tagline}&rdquo;
           </p>
         )}
@@ -122,8 +122,8 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
         {/* Genres Pill List */}
         {activeMedia.genres && activeMedia.genres.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-0.5 text-xs text-gray-300">
-            <span className="font-semibold text-white text-[11px] sm:text-xs">Genres:</span>
-            {activeMedia.genres.slice(0, 4).map((g) => (
+            <span className="font-semibold text-white text-[10px] sm:text-xs hidden sm:inline">Genres:</span>
+            {activeMedia.genres.slice(0, 3).map((g) => (
               <span
                 key={g}
                 className="px-2 sm:px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 font-medium text-[10px] sm:text-xs"
@@ -134,16 +134,16 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
           </div>
         )}
 
-        {/* CTA Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 pt-2 sm:pt-3">
-          <Link href={watchUrl}>
+        {/* CTA Action Row & Mobile Slide Indicators */}
+        <div className="flex items-center gap-2 sm:gap-3 pt-2 sm:pt-3 pointer-events-auto w-full">
+          <Link href={watchUrl} className="flex-1 sm:flex-none">
             <Button
               size="md"
               variant="primary"
-              className="sm:h-12 sm:px-6 2xl:h-14 2xl:px-8 shadow-2xl shadow-brand-600/40 hover:scale-105 transition-all text-xs sm:text-sm 2xl:text-base font-bold min-h-[44px]"
+              className="w-full sm:w-auto h-11 sm:h-12 px-4 sm:px-6 2xl:h-14 2xl:px-8 shadow-2xl shadow-brand-600/40 hover:scale-105 transition-all text-xs sm:text-sm 2xl:text-base font-bold justify-center"
             >
-              <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current mr-1.5" />
-              Watch Now
+              <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current mr-1.5 shrink-0" />
+              <span>Watch Now</span>
             </Button>
           </Link>
 
@@ -152,13 +152,14 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
               size="md"
               variant="glass"
               onClick={() => onOpenInfo(activeMedia)}
-              className="sm:h-12 sm:px-6 2xl:h-14 2xl:px-8 bg-white/15 hover:bg-white/25 text-white backdrop-blur-xl border border-white/20 hover:scale-105 transition-all text-xs sm:text-sm 2xl:text-base font-semibold min-h-[44px]"
+              className="flex-1 sm:flex-none h-11 sm:h-12 px-3.5 sm:px-6 2xl:h-14 2xl:px-8 bg-white/15 hover:bg-white/25 text-white backdrop-blur-xl border border-white/20 hover:scale-105 transition-all text-xs sm:text-sm 2xl:text-base font-semibold justify-center"
             >
-              <Info className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5" />
-              More Details
+              <Info className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 shrink-0" />
+              <span>Details</span>
             </Button>
           )}
 
+          {/* Desktop-only Surprise Me inside hero banner */}
           <Button
             size="md"
             variant="glass"
@@ -166,17 +167,38 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
               playDice();
               setIsSurpriseOpen(true);
             }}
-            className="sm:h-12 sm:px-5 2xl:h-14 2xl:px-7 bg-white/10 hover:bg-white/20 text-white backdrop-blur-xl border border-white/20 hover:scale-105 transition-all text-xs sm:text-sm font-semibold min-h-[44px]"
+            className="hidden sm:inline-flex h-11 sm:h-12 px-4 2xl:h-14 2xl:px-7 bg-white/10 hover:bg-white/20 text-white backdrop-blur-xl border border-white/20 hover:scale-105 transition-all text-xs sm:text-sm font-semibold"
           >
             <Dices className="w-4 h-4 mr-1.5 text-amber-400" />
-            Surprise Me
+            <span>Surprise Me</span>
           </Button>
+
+          {/* Mobile slide indicator pills neatly aligned on the right */}
+          {spotlightItems.length > 1 && (
+            <div className="flex sm:hidden items-center gap-1 bg-black/60 backdrop-blur-md px-2.5 py-2 rounded-full border border-white/10 ml-auto shrink-0">
+              {spotlightItems.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    playPop();
+                    setCurrentIndex(idx);
+                  }}
+                  aria-label={`Go to slide ${idx + 1}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    idx === currentIndex
+                      ? "w-4 bg-brand-400 shadow-md shadow-brand-400/50"
+                      : "w-1.5 bg-white/30"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Slide Navigation Controls & Interactive Mini-Thumbnails */}
+      {/* Slide Navigation Controls & Interactive Mini-Thumbnails (Tablet & Desktop) */}
       {spotlightItems.length > 1 && (
-        <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 md:bottom-10 md:right-10 z-20 flex flex-col items-end gap-2.5">
+        <div className="hidden sm:flex absolute bottom-4 right-4 sm:bottom-6 sm:right-6 md:bottom-10 md:right-10 z-20 flex-col items-end gap-2.5">
           {/* Interactive Mini-Poster Thumbnails Carousel */}
           <div className="hidden lg:flex items-center gap-2 bg-black/60 backdrop-blur-xl p-1.5 rounded-2xl border border-white/10 shadow-2xl">
             {spotlightItems.map((item, idx) => {
@@ -185,10 +207,6 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
                 <button
                   key={item.tmdbId}
                   onClick={() => {
-                    playPop();
-                    setCurrentIndex(idx);
-                  }}
-                  onMouseEnter={() => {
                     playPop();
                     setCurrentIndex(idx);
                   }}

@@ -144,7 +144,7 @@ export function TopTenShowcase({
               /* ========================================================= */
               <div
                 key={item.id}
-                className="flex-none w-[320px] xs:w-[420px] sm:w-[500px] md:w-[580px] lg:w-[620px] space-y-2 group"
+                className="flex-none w-[85vw] max-w-[320px] xs:max-w-[420px] sm:max-w-none sm:w-[500px] md:w-[580px] lg:w-[620px] space-y-2 group"
               >
                 {/* Visual Frame */}
                 <div className="relative aspect-[16/10] sm:aspect-[16/9.5] w-full rounded-2xl sm:rounded-3xl overflow-hidden bg-surface border border-white/10 shadow-2xl transition-all">
@@ -259,7 +259,7 @@ export function TopTenShowcase({
               <div
                 key={item.id}
                 onClick={() => setSelectedIndex(index)}
-                className="flex-none w-[145px] xs:w-[165px] sm:w-[185px] md:w-[205px] lg:w-[220px] space-y-2 group cursor-pointer"
+                className="flex-none w-[135px] xs:w-[155px] sm:w-[185px] md:w-[205px] lg:w-[220px] space-y-2 group cursor-pointer"
                 title={`Click to spotlight #${rank} ${item.title}`}
               >
                 {/* Portrait Poster Frame */}
