@@ -5,6 +5,14 @@ import { DEMO_MEDIA, DEMO_GENRES } from "../demoData";
 const SCREENSCAPE_BASE_API = "https://web.screenscape.fun/api";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
+const DEFAULT_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+  Accept: "application/json, text/plain, */*",
+  "Accept-Language": "en-US,en;q=0.9",
+  Referer: "https://web.screenscape.fun/",
+};
+
 const GENRE_MAP: Record<number, string> = {
   28: "Action",
   12: "Adventure",
@@ -147,7 +155,7 @@ export class ScreenScapeProvider implements MetadataProvider {
     try {
       if (mediaType === "movie") {
         const res = await fetch(`${SCREENSCAPE_BASE_API}/movies/trending?page=${page}`, {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          headers: DEFAULT_HEADERS,
           next: { revalidate: 3600 },
         });
         if (!res.ok) throw new Error(`ScreenScape trending movies failed: HTTP ${res.status}`);
@@ -163,7 +171,7 @@ export class ScreenScapeProvider implements MetadataProvider {
 
       if (mediaType === "tv") {
         const res = await fetch(`${SCREENSCAPE_BASE_API}/tv/trending?page=${page}`, {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          headers: DEFAULT_HEADERS,
           next: { revalidate: 3600 },
         });
         if (!res.ok) throw new Error(`ScreenScape trending TV failed: HTTP ${res.status}`);
@@ -180,11 +188,11 @@ export class ScreenScapeProvider implements MetadataProvider {
       // "all": fetch both for this page and interleave
       const [moviesRes, tvRes] = await Promise.all([
         fetch(`${SCREENSCAPE_BASE_API}/movies/trending?page=${page}`, {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          headers: DEFAULT_HEADERS,
           next: { revalidate: 3600 },
         }),
         fetch(`${SCREENSCAPE_BASE_API}/tv/trending?page=${page}`, {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          headers: DEFAULT_HEADERS,
           next: { revalidate: 3600 },
         }),
       ]);
@@ -233,12 +241,12 @@ export class ScreenScapeProvider implements MetadataProvider {
     try {
       if (mediaType === "movie") {
         let res = await fetch(`${SCREENSCAPE_BASE_API}/movies/popular?page=${page}`, {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          headers: DEFAULT_HEADERS,
           next: { revalidate: 3600 },
         });
         if (!res.ok) {
           res = await fetch(`${SCREENSCAPE_BASE_API}/movies/now-playing?page=${page}`, {
-            headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+            headers: DEFAULT_HEADERS,
             next: { revalidate: 3600 },
           });
         }
@@ -254,12 +262,12 @@ export class ScreenScapeProvider implements MetadataProvider {
       }
 
       let res = await fetch(`${SCREENSCAPE_BASE_API}/tv/popular?page=${page}`, {
-        headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+        headers: DEFAULT_HEADERS,
         next: { revalidate: 3600 },
       });
       if (!res.ok) {
         res = await fetch(`${SCREENSCAPE_BASE_API}/tv/trending?page=${page}`, {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          headers: DEFAULT_HEADERS,
           next: { revalidate: 3600 },
         });
       }
@@ -297,7 +305,7 @@ export class ScreenScapeProvider implements MetadataProvider {
       const res = await fetch(
         `${SCREENSCAPE_BASE_API}/search?q=${encodeURIComponent(query.trim())}&page=${page}`,
         {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          headers: DEFAULT_HEADERS,
           next: { revalidate: 600 },
         }
       );
@@ -352,7 +360,7 @@ export class ScreenScapeProvider implements MetadataProvider {
       try {
         if (mediaType === "tv") {
           const res = await fetch(`${SCREENSCAPE_BASE_API}/lists/1?page=${page}`, {
-            headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+            headers: DEFAULT_HEADERS,
             next: { revalidate: 3600 },
           });
           if (res.ok) {
@@ -375,7 +383,7 @@ export class ScreenScapeProvider implements MetadataProvider {
           const res = await fetch(
             `${SCREENSCAPE_BASE_API}/languages/discover?lang=ja&type=movie&page=${page}`,
             {
-              headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+              headers: DEFAULT_HEADERS,
               next: { revalidate: 3600 },
             }
           );
@@ -399,13 +407,13 @@ export class ScreenScapeProvider implements MetadataProvider {
           // Both TV Series and Movies requested for comprehensive catalog
           const [tvRes, movieRes] = await Promise.all([
             fetch(`${SCREENSCAPE_BASE_API}/lists/1?page=${page}`, {
-              headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+              headers: DEFAULT_HEADERS,
               next: { revalidate: 3600 },
             }).catch(() => null),
             fetch(
               `${SCREENSCAPE_BASE_API}/languages/discover?lang=ja&type=movie&page=${page}`,
               {
-                headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+                headers: DEFAULT_HEADERS,
                 next: { revalidate: 3600 },
               }
             ).catch(() => null),
@@ -480,7 +488,7 @@ export class ScreenScapeProvider implements MetadataProvider {
     if (targetGenre === "korean" || targetGenre === "k-drama") {
       try {
         const res = await fetch(`${SCREENSCAPE_BASE_API}/lists/3?page=${page}`, {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          headers: DEFAULT_HEADERS,
           next: { revalidate: 3600 },
         });
         if (res.ok) {
@@ -504,7 +512,7 @@ export class ScreenScapeProvider implements MetadataProvider {
     if (targetGenre === "marvel") {
       try {
         const res = await fetch(`${SCREENSCAPE_BASE_API}/lists/2?page=${page}`, {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          headers: DEFAULT_HEADERS,
           next: { revalidate: 3600 },
         });
         if (res.ok) {
@@ -528,7 +536,7 @@ export class ScreenScapeProvider implements MetadataProvider {
     if (targetGenre === "dc") {
       try {
         const res = await fetch(`${SCREENSCAPE_BASE_API}/lists/4?page=${page}`, {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          headers: DEFAULT_HEADERS,
           next: { revalidate: 3600 },
         });
         if (res.ok) {
@@ -577,7 +585,7 @@ export class ScreenScapeProvider implements MetadataProvider {
     try {
       if (mediaType === "tv") {
         const res = await fetch(`${SCREENSCAPE_BASE_API}/tv/${id}`, {
-          headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+          headers: DEFAULT_HEADERS,
           next: { revalidate: 3600 },
         });
 
@@ -589,11 +597,11 @@ export class ScreenScapeProvider implements MetadataProvider {
         // Check tv/popular and tv/trending
         const [tvPop, tvTrend] = await Promise.all([
           fetch(`${SCREENSCAPE_BASE_API}/tv/popular`, {
-            headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+            headers: DEFAULT_HEADERS,
             next: { revalidate: 3600 },
           }),
           fetch(`${SCREENSCAPE_BASE_API}/tv/trending`, {
-            headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+            headers: DEFAULT_HEADERS,
             next: { revalidate: 3600 },
           }),
         ]);
@@ -611,7 +619,7 @@ export class ScreenScapeProvider implements MetadataProvider {
 
       // For movies or if TV direct lookup fails, search ScreenScape catalog by ID / title
       const res = await fetch(`${SCREENSCAPE_BASE_API}/movies/trending`, {
-        headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+        headers: DEFAULT_HEADERS,
         next: { revalidate: 3600 },
       });
 
@@ -625,7 +633,7 @@ export class ScreenScapeProvider implements MetadataProvider {
 
       // Check now-playing
       const nowPlayingRes = await fetch(`${SCREENSCAPE_BASE_API}/movies/now-playing`, {
-        headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+        headers: DEFAULT_HEADERS,
         next: { revalidate: 3600 },
       });
 
@@ -667,7 +675,7 @@ export class ScreenScapeProvider implements MetadataProvider {
     try {
       // 1. Try ScreenScape dedicated season API endpoint: /api/tv/{id}/season/{season}
       const seasonRes = await fetch(`${SCREENSCAPE_BASE_API}/tv/${tvId}/season/${seasonNumber}`, {
-        headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+        headers: DEFAULT_HEADERS,
         next: { revalidate: 3600 },
       });
 
@@ -695,7 +703,7 @@ export class ScreenScapeProvider implements MetadataProvider {
 
       // 2. Fallback to /api/tv/{id}
       const res = await fetch(`${SCREENSCAPE_BASE_API}/tv/${tvId}`, {
-        headers: { "User-Agent": "Mozilla/5.0", Referer: "https://web.screenscape.fun" },
+        headers: DEFAULT_HEADERS,
         next: { revalidate: 3600 },
       });
 
