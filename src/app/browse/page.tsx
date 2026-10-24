@@ -217,7 +217,7 @@ function BrowseContent() {
           </h1>
           <p className="text-xs sm:text-sm text-foreground-muted max-w-2xl leading-relaxed">
             {activeRegionObj
-              ? `Streaming regional and country-specific movies, TV series, and trending productions from ${activeRegionObj.name} (${activeRegionObj.nativeName}).`
+              ? `Streaming regional and country-specific movies, TV series, and trending productions from ${activeRegionObj.name}${activeRegionObj.alias ? ` • ${activeRegionObj.alias}` : ""}.`
               : filterGenre.toLowerCase() === "anime"
               ? "Stream acclaimed Japanese anime series, cyberpunk sagas, supernatural thrillers, and studio feature films."
               : filterType === "tv"
