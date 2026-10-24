@@ -2,11 +2,12 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Play, Info, Star, Sparkles, Film, Tv, ChevronLeft, ChevronRight, Dices } from "lucide-react";
+import { Play, Info, Star, Sparkles, Film, Tv, ChevronLeft, ChevronRight, Dices, Clapperboard } from "lucide-react";
 import { MediaItem } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { SurpriseMeModal } from "./SurpriseMeModal";
+import { TrailerBackgroundPlayer } from "./TrailerBackgroundPlayer";
 import { playDice, playPop } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 
@@ -64,30 +65,15 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
       <div className="ambient-halo -top-24 -left-24 w-72 sm:w-96 2xl:w-[32rem] h-72 sm:h-96 2xl:h-[32rem] bg-brand-600/30" />
       <div className="ambient-halo -bottom-24 -right-24 w-72 sm:w-96 2xl:w-[32rem] h-72 sm:h-96 2xl:h-[32rem] bg-indigo-600/30" />
 
-      {/* Cinematic Backdrop Image with smooth crossfade */}
+      {/* Live Trailer Video Stream (YouTube with DailyMotion fallback) */}
       <div className="relative w-full h-full overflow-hidden">
-        {activeMedia.backdropUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            key={activeMedia.tmdbId}
-            src={activeMedia.backdropUrl}
-            alt={activeMedia.title}
-            className="w-full h-full object-cover object-center transform scale-100 animate-fadeIn transition-transform duration-1000 ease-out group-hover:scale-105"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-brand-950 via-surface to-background flex items-center justify-center opacity-40">
-            {activeMedia.type === "tv" ? (
-              <Tv className="w-16 sm:w-24 h-16 sm:h-24 text-white/20" />
-            ) : (
-              <Film className="w-16 sm:w-24 h-16 sm:h-24 text-white/20" />
-            )}
-          </div>
-        )}
-
-        {/* Cinematic Vignette Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent max-w-4xl 2xl:max-w-6xl" />
-        <div className="absolute inset-0 bg-radial-gradient from-transparent to-background/40" />
+        <TrailerBackgroundPlayer
+          key={activeMedia.tmdbId}
+          title={activeMedia.title}
+          year={activeMedia.releaseYear}
+          isPaused={isPaused}
+          aspectRatio="banner"
+        />
       </div>
 
       {/* Hero Content Overlay (Fluid padding & typography for mobile to TV) */}
@@ -97,6 +83,10 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
           <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-brand-500 text-white shadow-lg shadow-brand-500/40">
             <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-pulse" />
             Spotlight Premiere
+          </span>
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-red-600/30 border border-red-500/40 text-red-300 backdrop-blur-md">
+            <Clapperboard className="w-3 h-3 text-red-400" />
+            Official Trailer
           </span>
           {activeMedia.rating > 0 && (
             <Badge variant="rating" className="text-[10px] sm:text-xs">

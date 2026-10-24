@@ -7,6 +7,7 @@ import { MediaItem } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { useUserData } from "@/context/UserDataContext";
+import { TrailerBackgroundPlayer } from "./TrailerBackgroundPlayer";
 import { playPop, playHeart, playSuccess } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 
@@ -113,22 +114,17 @@ export function MediaModal({ media, onClose }: MediaModalProps) {
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Header with Backdrop */}
+        {/* Modal Header with Live Trailer Video (YouTube with DailyMotion fallback) */}
         <div className="relative h-64 sm:h-80 w-full shrink-0 overflow-hidden bg-black">
-          {media.backdropUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={media.backdropUrl}
-              alt={media.title}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-brand-950 via-surface to-background opacity-60" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/40 to-transparent" />
+          <TrailerBackgroundPlayer
+            key={media.tmdbId}
+            title={media.title}
+            year={media.releaseYear}
+            aspectRatio="modal"
+          />
 
-          {/* Title on Backdrop */}
-          <div className="absolute bottom-6 left-6 right-6 space-y-2">
+          {/* Title on Trailer Header */}
+          <div className="absolute bottom-4 left-6 right-6 space-y-2 pointer-events-none z-20">
             <div className="flex items-center gap-2">
               <Badge variant="rating">
                 <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
@@ -136,8 +132,12 @@ export function MediaModal({ media, onClose }: MediaModalProps) {
               </Badge>
               <Badge variant="brand">{media.type === "tv" ? "TV Series" : "Movie"}</Badge>
               <Badge variant="quality">{media.quality || "4K"}</Badge>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-600/30 border border-red-500/40 text-red-300 backdrop-blur-md">
+                <Clapperboard className="w-3 h-3 text-red-400" />
+                Live Trailer Stream
+              </span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-white">{media.title}</h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-white drop-shadow-md">{media.title}</h2>
           </div>
         </div>
 

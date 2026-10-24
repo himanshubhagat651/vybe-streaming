@@ -1,0 +1,259 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import { Volume2, VolumeX, Play, Pause, Clapperboard, RefreshCw } from "lucide-react";
+import { playPop } from "@/lib/audio";
+import { cn } from "@/lib/utils";
+
+interface TrailerBackgroundPlayerProps {
+  title: string;
+  year?: string;
+  isPaused?: boolean;
+  className?: string;
+  aspectRatio?: "banner" | "modal" | "card";
+  onTrailerLoaded?: (provider: "youtube" | "dailymotion") => void;
+}
+
+export function TrailerBackgroundPlayer({
+  title,
+  year = "",
+  isPaused = false,
+  className,
+  aspectRatio = "banner",
+  onTrailerLoaded,
+}: TrailerBackgroundPlayerProps) {
+  const [provider, setProvider] = useState<"youtube" | "dailymotion">("youtube");
+  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+    setIsLoading(true);
+    setHasError(false);
+
+    const fetchTrailer = async () => {
+      try {
+        const queryParams = new URLSearchParams({
+          title,
+          year: year || "",
+          provider,
+          muted: isMuted ? "true" : "false",
+          autoplay: isPlaying && !isPaused ? "true" : "false",
+        });
+
+        const res = await fetch(`/api/trailer?${queryParams.toString()}`);
+        if (!res.ok) throw new Error("Failed to resolve trailer");
+        const data = await res.json();
+
+        if (!isCancelled) {
+          if (data.embedUrl) {
+            setEmbedUrl(data.embedUrl);
+            setProvider(data.provider || "youtube");
+            if (data.fallbackUrl) setFallbackUrl(data.fallbackUrl);
+            if (onTrailerLoaded) onTrailerLoaded(data.provider || "youtube");
+          } else {
+            throw new Error("No trailer embed URL returned");
+          }
+        }
+      } catch (err) {
+        console.warn(`Trailer fetch error for "${title}":`, err);
+        if (!isCancelled) {
+          // If YouTube failed, auto-fallback to DailyMotion search
+          if (provider === "youtube") {
+            setProvider("dailymotion");
+            const dmFallback = `https://www.dailymotion.com/embed/video/?search=${encodeURIComponent(
+              `${title} official trailer`
+            )}&autoplay=1&mute=1&controls=0&ui-theme=dark`;
+            setEmbedUrl(dmFallback);
+          } else {
+            // Guaranteed YouTube search embed as final resort
+            setProvider("youtube");
+            setEmbedUrl(
+              `https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(
+                `${title} official trailer`
+              )}&autoplay=1&mute=1&controls=0&playsinline=1`
+            );
+          }
+        }
+      } finally {
+        if (!isCancelled) setIsLoading(false);
+      }
+    };
+
+    fetchTrailer();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [title, year, provider, isMuted, isPlaying, isPaused, onTrailerLoaded]);
+
+  const toggleSound = () => {
+    playPop();
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+
+    // Update the embed URL with the new mute parameter
+    if (embedUrl) {
+      try {
+        const url = new URL(embedUrl);
+        url.searchParams.set("mute", nextMuted ? "1" : "0");
+        setEmbedUrl(url.toString());
+      } catch {
+        // Fallback simple replacement
+        const updated = nextMuted
+          ? embedUrl.replace("mute=0", "mute=1")
+          : embedUrl.replace("mute=1", "mute=0");
+        setEmbedUrl(updated);
+      }
+    }
+  };
+
+  const togglePlayback = () => {
+    playPop();
+    const nextPlaying = !isPlaying;
+    setIsPlaying(nextPlaying);
+
+    if (embedUrl) {
+      try {
+        const url = new URL(embedUrl);
+        url.searchParams.set("autoplay", nextPlaying ? "1" : "0");
+        setEmbedUrl(url.toString());
+      } catch {
+        const updated = nextPlaying
+          ? embedUrl.replace("autoplay=0", "autoplay=1")
+          : embedUrl.replace("autoplay=1", "autoplay=0");
+        setEmbedUrl(updated);
+      }
+    }
+  };
+
+  const switchProvider = (target: "youtube" | "dailymotion") => {
+    playPop();
+    setProvider(target);
+    setIsLoading(true);
+  };
+
+  return (
+    <div className={cn("relative w-full h-full overflow-hidden bg-black select-none", className)}>
+      {/* Video Stream Iframe */}
+      {embedUrl && !hasError ? (
+        <div className="absolute inset-0 w-full h-full scale-[1.03] overflow-hidden pointer-events-none md:pointer-events-auto">
+          <iframe
+            ref={iframeRef}
+            key={`${provider}-${title}-${isMuted ? "muted" : "unmuted"}`}
+            src={embedUrl}
+            title={`${title} Official Trailer Preview (${provider})`}
+            className="w-full h-full border-0 object-cover pointer-events-auto"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            onError={() => {
+              if (provider === "youtube" && fallbackUrl) {
+                setProvider("dailymotion");
+                setEmbedUrl(fallbackUrl);
+              } else {
+                setHasError(true);
+              }
+            }}
+          />
+        </div>
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center bg-zinc-950">
+          <div className="flex flex-col items-center gap-2 text-zinc-500">
+            <Clapperboard className="w-12 h-12 stroke-1 animate-pulse" />
+            <span className="text-xs font-mono">Loading Trailer Preview...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center transition-opacity duration-500 z-10 pointer-events-none">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 border border-white/10 text-white/80 text-xs font-mono">
+            <RefreshCw className="w-3.5 h-3.5 animate-spin text-brand-400" />
+            <span>Streaming {provider === "youtube" ? "YouTube" : "DailyMotion"} Trailer...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Cinematic Vignette Gradients */}
+      {aspectRatio === "banner" && (
+        <>
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent max-w-4xl 2xl:max-w-6xl pointer-events-none" />
+          <div className="absolute inset-0 bg-radial-gradient from-transparent to-background/30 pointer-events-none" />
+        </>
+      )}
+
+      {aspectRatio === "modal" && (
+        <div className="absolute inset-0 bg-gradient-to-t from-surface via-transparent to-black/40 pointer-events-none" />
+      )}
+
+      {/* Interactive Floating Video Controls */}
+      <div className="absolute top-4 right-4 z-30 flex items-center gap-2 pointer-events-auto">
+        {/* Provider Switcher Badge (YouTube <-> DailyMotion) */}
+        <div className="flex items-center bg-black/70 backdrop-blur-md rounded-full border border-white/15 p-0.5 shadow-xl text-[11px] font-semibold">
+          <button
+            type="button"
+            onClick={() => switchProvider("youtube")}
+            className={cn(
+              "px-2.5 py-1 rounded-full transition-all flex items-center gap-1",
+              provider === "youtube"
+                ? "bg-red-600 text-white shadow-md shadow-red-600/40"
+                : "text-white/60 hover:text-white"
+            )}
+            title="Watch on YouTube"
+          >
+            <span>▶</span>
+            <span>YouTube</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => switchProvider("dailymotion")}
+            className={cn(
+              "px-2.5 py-1 rounded-full transition-all flex items-center gap-1",
+              provider === "dailymotion"
+                ? "bg-blue-600 text-white shadow-md shadow-blue-600/40"
+                : "text-white/60 hover:text-white"
+            )}
+            title="Watch on DailyMotion fallback"
+          >
+            <span>▷</span>
+            <span>DailyMotion</span>
+          </button>
+        </div>
+
+        {/* Play / Pause Toggle */}
+        <button
+          type="button"
+          onClick={togglePlayback}
+          className="w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-md border border-white/15 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-xl"
+          title={isPlaying ? "Pause Trailer Video" : "Play Trailer Video"}
+          aria-label={isPlaying ? "Pause trailer video" : "Play trailer video"}
+        >
+          {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
+        </button>
+
+        {/* Sound Toggle (Mute / Unmute) */}
+        <button
+          type="button"
+          onClick={toggleSound}
+          className={cn(
+            "w-8 h-8 rounded-full backdrop-blur-md border transition-all hover:scale-105 active:scale-95 shadow-xl flex items-center justify-center",
+            isMuted
+              ? "bg-black/70 hover:bg-black/90 border-white/15 text-white/80"
+              : "bg-brand-600 text-white border-brand-400 shadow-brand-500/50"
+          )}
+          title={isMuted ? "Unmute Trailer Audio" : "Mute Trailer Audio"}
+          aria-label={isMuted ? "Unmute trailer audio" : "Mute trailer audio"}
+        >
+          {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 animate-pulse" />}
+        </button>
+      </div>
+    </div>
+  );
+}
