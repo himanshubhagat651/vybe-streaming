@@ -7,6 +7,7 @@ import { fetchDetails, fetchSeasonEpisodes, fetchTrending } from "@/lib/metadata
 import { MediaType, MediaItem, Season } from "@/lib/types";
 import { ScreenScapePlayer } from "@/components/player/ScreenScapePlayer";
 import { TvEpisodeDrawer } from "@/components/player/TvEpisodeDrawer";
+import { DownloadCenterModal } from "@/components/player/DownloadCenterModal";
 import { MediaRow } from "@/components/media/MediaRow";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -47,6 +48,7 @@ function WatchPageContent() {
 
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -198,15 +200,13 @@ function WatchPageContent() {
           <span>Back to Discovery</span>
         </Link>
 
-        <a
-          href={`https://web.screenscape.fun/download/${mediaType}/${actualTmdbId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-surface-hover hover:bg-surface-border text-foreground-muted hover:text-brand-400 border border-surface-border transition-colors"
+        <button
+          onClick={() => setIsDownloadOpen(true)}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-600/20 transition-all"
         >
           <Download className="w-3.5 h-3.5" />
-          <span>Mirror Download Links</span>
-        </a>
+          <span>Download {mediaType === "tv" ? "Episodes" : "Movie"}</span>
+        </button>
       </div>
 
       {/* Main Watch Layout Grid */}
@@ -361,6 +361,21 @@ function WatchPageContent() {
             items={recommendations}
           />
         </div>
+      )}
+
+      {/* Download Center Modal */}
+      {media && (
+        <DownloadCenterModal
+          isOpen={isDownloadOpen}
+          onClose={() => setIsDownloadOpen(false)}
+          tmdbId={actualTmdbId}
+          type={mediaType}
+          title={media.title}
+          season={activeSeason}
+          episode={activeEpisode}
+          year={media.releaseYear}
+          officialDownloadUrl={`https://web.screenscape.fun/download/${mediaType}/${actualTmdbId}`}
+        />
       )}
     </div>
   );
