@@ -294,9 +294,7 @@ export function ScreenScapePlayer({
               height="100%"
               frameBorder="0"
               allowFullScreen
-              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-              referrerPolicy="origin-when-cross-origin"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write"
               onLoad={() => setIsLoadingIframe(false)}
               className="w-full h-full border-0 rounded-2xl"
             />
