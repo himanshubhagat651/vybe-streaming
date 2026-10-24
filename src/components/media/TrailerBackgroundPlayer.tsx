@@ -1,14 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Volume2, VolumeX, Play, Pause, Clapperboard, RefreshCw } from "lucide-react";
+import { Volume2, VolumeX, Clapperboard, RefreshCw } from "lucide-react";
 import { playPop } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 
 interface TrailerBackgroundPlayerProps {
   title: string;
   year?: string;
-  isPaused?: boolean;
   className?: string;
   aspectRatio?: "banner" | "modal" | "card";
   onTrailerLoaded?: (provider: "youtube" | "dailymotion") => void;
@@ -17,7 +16,6 @@ interface TrailerBackgroundPlayerProps {
 export function TrailerBackgroundPlayer({
   title,
   year = "",
-  isPaused = false,
   className,
   aspectRatio = "banner",
   onTrailerLoaded,
@@ -26,7 +24,6 @@ export function TrailerBackgroundPlayer({
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -43,7 +40,7 @@ export function TrailerBackgroundPlayer({
           year: year || "",
           provider,
           muted: isMuted ? "true" : "false",
-          autoplay: isPlaying && !isPaused ? "true" : "false",
+          autoplay: "true",
         });
 
         const res = await fetch(`/api/trailer?${queryParams.toString()}`);
@@ -68,7 +65,7 @@ export function TrailerBackgroundPlayer({
             setProvider("dailymotion");
             const dmFallback = `https://www.dailymotion.com/embed/video/?search=${encodeURIComponent(
               `${title} official trailer`
-            )}&autoplay=1&mute=1&controls=0&ui-theme=dark`;
+            )}&autoplay=1&mute=1&controls=0&ui-theme=dark&queue-enable=false`;
             setEmbedUrl(dmFallback);
           } else {
             // Guaranteed YouTube search embed as final resort
@@ -76,7 +73,7 @@ export function TrailerBackgroundPlayer({
             setEmbedUrl(
               `https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(
                 `${title} official trailer`
-              )}&autoplay=1&mute=1&controls=0&playsinline=1`
+              )}&autoplay=1&mute=1&controls=0&playsinline=1&disablekb=1&fs=0`
             );
           }
         }
@@ -90,43 +87,24 @@ export function TrailerBackgroundPlayer({
     return () => {
       isCancelled = true;
     };
-  }, [title, year, provider, isMuted, isPlaying, isPaused, onTrailerLoaded]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title, year, provider, onTrailerLoaded]);
 
   const toggleSound = () => {
     playPop();
     const nextMuted = !isMuted;
     setIsMuted(nextMuted);
 
-    // Update the embed URL with the new mute parameter
+    // Update the embed URL with the new mute parameter without full refetch
     if (embedUrl) {
       try {
         const url = new URL(embedUrl);
         url.searchParams.set("mute", nextMuted ? "1" : "0");
         setEmbedUrl(url.toString());
       } catch {
-        // Fallback simple replacement
         const updated = nextMuted
           ? embedUrl.replace("mute=0", "mute=1")
           : embedUrl.replace("mute=1", "mute=0");
-        setEmbedUrl(updated);
-      }
-    }
-  };
-
-  const togglePlayback = () => {
-    playPop();
-    const nextPlaying = !isPlaying;
-    setIsPlaying(nextPlaying);
-
-    if (embedUrl) {
-      try {
-        const url = new URL(embedUrl);
-        url.searchParams.set("autoplay", nextPlaying ? "1" : "0");
-        setEmbedUrl(url.toString());
-      } catch {
-        const updated = nextPlaying
-          ? embedUrl.replace("autoplay=0", "autoplay=1")
-          : embedUrl.replace("autoplay=1", "autoplay=0");
         setEmbedUrl(updated);
       }
     }
@@ -142,13 +120,13 @@ export function TrailerBackgroundPlayer({
     <div className={cn("relative w-full h-full overflow-hidden bg-black select-none", className)}>
       {/* Video Stream Iframe */}
       {embedUrl && !hasError ? (
-        <div className="absolute inset-0 w-full h-full scale-[1.03] overflow-hidden pointer-events-none md:pointer-events-auto">
+        <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none">
           <iframe
             ref={iframeRef}
-            key={`${provider}-${title}-${isMuted ? "muted" : "unmuted"}`}
+            key={`${provider}-${title}`}
             src={embedUrl}
             title={`${title} Official Trailer Preview (${provider})`}
-            className="w-full h-full border-0 object-cover pointer-events-auto"
+            className="w-full h-full border-0 object-cover pointer-events-none scale-[1.28] origin-center"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
             onError={() => {
@@ -226,17 +204,6 @@ export function TrailerBackgroundPlayer({
             <span>DailyMotion</span>
           </button>
         </div>
-
-        {/* Play / Pause Toggle */}
-        <button
-          type="button"
-          onClick={togglePlayback}
-          className="w-8 h-8 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-md border border-white/15 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-xl"
-          title={isPlaying ? "Pause Trailer Video" : "Play Trailer Video"}
-          aria-label={isPlaying ? "Pause trailer video" : "Play trailer video"}
-        >
-          {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
-        </button>
 
         {/* Sound Toggle (Mute / Unmute) */}
         <button

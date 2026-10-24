@@ -25,23 +25,22 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
     : [];
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const [isSurpriseOpen, setIsSurpriseOpen] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const activeMedia = spotlightItems[currentIndex] || media;
 
   useEffect(() => {
-    if (spotlightItems.length <= 1 || isPaused) return;
+    if (spotlightItems.length <= 1) return;
 
     timerRef.current = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % spotlightItems.length);
-    }, 7000);
+    }, 60000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [spotlightItems.length, isPaused]);
+  }, [spotlightItems.length]);
 
   if (!activeMedia) return null;
 
@@ -58,8 +57,6 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
   return (
     <div
       className="relative w-full h-[380px] xs:h-[440px] sm:h-[500px] md:h-[560px] lg:h-[620px] 2xl:h-[700px] 3xl:h-[800px] rounded-2xl sm:rounded-3xl overflow-hidden mb-8 md:mb-12 border border-surface-border shadow-2xl select-none bg-surface-hover group"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
     >
       {/* Dynamic Ambient Glow behind banner */}
       <div className="ambient-halo -top-24 -left-24 w-72 sm:w-96 2xl:w-[32rem] h-72 sm:h-96 2xl:h-[32rem] bg-brand-600/30" />
@@ -71,7 +68,6 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
           key={activeMedia.tmdbId}
           title={activeMedia.title}
           year={activeMedia.releaseYear}
-          isPaused={isPaused}
           aspectRatio="banner"
         />
       </div>

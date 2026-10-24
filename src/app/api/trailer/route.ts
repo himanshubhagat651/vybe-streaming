@@ -63,9 +63,9 @@ export async function GET(request: NextRequest) {
 
     // Determine primary provider
     if (requestedProvider === "dailymotion" && dmVideoId) {
-      const embedUrl = `https://www.dailymotion.com/embed/video/${dmVideoId}?autoplay=${
-        isAutoplay ? 1 : 0
-      }&mute=${isMuted ? 1 : 0}&ui-theme=dark&controls=0&queue-enable=false`;
+      const embedUrl = `https://www.dailymotion.com/embed/video/${dmVideoId}?autoplay=1&mute=${
+        isMuted ? 1 : 0
+      }&ui-theme=dark&controls=0&queue-enable=false&sharing-enable=false`;
 
       return NextResponse.json(
         {
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
           videoId: dmVideoId,
           embedUrl,
           fallbackUrl: ytVideoId
-            ? `https://www.youtube-nocookie.com/embed/${ytVideoId}?autoplay=1&mute=1&loop=1&playlist=${ytVideoId}&playsinline=1`
+            ? `https://www.youtube-nocookie.com/embed/${ytVideoId}?autoplay=1&mute=1&loop=1&playlist=${ytVideoId}&playsinline=1&controls=0&disablekb=1&fs=0&rel=0&modestbranding=1`
             : null,
           title: cleanTitle,
         },
@@ -86,9 +86,9 @@ export async function GET(request: NextRequest) {
     }
 
     if (ytVideoId) {
-      const embedUrl = `https://www.youtube-nocookie.com/embed/${ytVideoId}?autoplay=${
-        isAutoplay ? 1 : 0
-      }&mute=${isMuted ? 1 : 0}&loop=1&playlist=${ytVideoId}&playsinline=1&controls=0&rel=0&modestbranding=1&enablejsapi=1`;
+      const embedUrl = `https://www.youtube-nocookie.com/embed/${ytVideoId}?autoplay=1&mute=${
+        isMuted ? 1 : 0
+      }&loop=1&playlist=${ytVideoId}&playsinline=1&controls=0&disablekb=1&fs=0&rel=0&modestbranding=1&iv_load_policy=3`;
 
       return NextResponse.json(
         {
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
           videoId: ytVideoId,
           embedUrl,
           fallbackUrl: dmVideoId
-            ? `https://www.dailymotion.com/embed/video/${dmVideoId}?autoplay=1&mute=1&ui-theme=dark`
+            ? `https://www.dailymotion.com/embed/video/${dmVideoId}?autoplay=1&mute=1&ui-theme=dark&controls=0&queue-enable=false`
             : null,
           title: cleanTitle,
         },
@@ -110,9 +110,9 @@ export async function GET(request: NextRequest) {
 
     // If YouTube video ID was not parsed, but DailyMotion is available:
     if (dmVideoId) {
-      const embedUrl = `https://www.dailymotion.com/embed/video/${dmVideoId}?autoplay=${
-        isAutoplay ? 1 : 0
-      }&mute=${isMuted ? 1 : 0}&ui-theme=dark&controls=0`;
+      const embedUrl = `https://www.dailymotion.com/embed/video/${dmVideoId}?autoplay=1&mute=${
+        isMuted ? 1 : 0
+      }&ui-theme=dark&controls=0&queue-enable=false&sharing-enable=false`;
 
       return NextResponse.json(
         {
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
     // Default YouTube search playlist embed as last guaranteed fallback
     const fallbackSearchUrl = `https://www.youtube-nocookie.com/embed?listType=search&list=${encodeURIComponent(
       query
-    )}&autoplay=${isAutoplay ? 1 : 0}&mute=${isMuted ? 1 : 0}&playsinline=1&controls=0`;
+    )}&autoplay=1&mute=${isMuted ? 1 : 0}&playsinline=1&controls=0&disablekb=1&fs=0&rel=0&modestbranding=1`;
 
     return NextResponse.json(
       {
