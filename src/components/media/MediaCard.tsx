@@ -17,9 +17,29 @@ interface MediaCardProps {
 
 export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
   const { isInWatchlist, addToWatchlist, removeFromWatchlist } = useUserData();
-  const [imgError, setImgError] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState<string>(media.posterUrl || media.backdropUrl || "");
+  const [triedBackdrop, setTriedBackdrop] = useState(false);
+  const [imgError, setImgError] = useState(!media.posterUrl && !media.backdropUrl);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+
+  useEffect(() => {
+    const initial = media.posterUrl || media.backdropUrl || "";
+    setCurrentSrc(initial);
+    setTriedBackdrop(false);
+    setImgError(!initial);
+    setImgLoaded(false);
+  }, [media.posterUrl, media.backdropUrl]);
+
+  const handleImageError = () => {
+    if (!triedBackdrop && media.backdropUrl && media.backdropUrl !== currentSrc) {
+      setTriedBackdrop(true);
+      setCurrentSrc(media.backdropUrl);
+      setImgLoaded(false);
+    } else {
+      setImgError(true);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -76,7 +96,7 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
   };
 
   const watchUrl = `/watch/${media.type}/${media.tmdbId}`;
-  const hasValidImage = media.posterUrl && !imgError;
+  const hasValidImage = Boolean(currentSrc) && !imgError;
 
   return (
     <div className="group relative flex flex-col rounded-2xl overflow-hidden bg-surface border border-surface-border transition-all duration-300 ease-out hover:shadow-[0_22px_45px_-12px_rgba(0,0,0,0.85)] hover:border-brand-500/40 hover:-translate-y-2 active:scale-[0.98] select-none will-change-transform">
@@ -90,23 +110,53 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
         {hasValidImage ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={media.posterUrl!}
+            src={currentSrc}
             alt={media.title}
             loading="lazy"
             onLoad={() => setImgLoaded(true)}
-            onError={() => setImgError(true)}
+            onError={handleImageError}
             className={cn(
               "w-full h-full object-cover transition-all duration-500 ease-out group-hover:scale-105",
               imgLoaded ? "opacity-100" : "opacity-0"
             )}
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-b from-surface-hover to-surface border-b border-surface-border">
-            <div className="w-12 h-12 rounded-2xl bg-brand-600/10 text-brand-400 flex items-center justify-center mb-2">
-              {media.type === "tv" ? <Tv className="w-6 h-6" /> : <Film className="w-6 h-6" />}
+          <div className="w-full h-full flex flex-col items-center justify-between p-4 text-center bg-gradient-to-br from-brand-950/70 via-surface to-background border-b border-surface-border/50 relative overflow-hidden select-none">
+            {/* Subtle atmospheric ambient glow */}
+            <div className="absolute -top-10 -right-10 w-28 h-28 bg-brand-500/15 rounded-full blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-10 -left-10 w-28 h-28 bg-purple-500/15 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Top tag */}
+            <div className="w-full flex items-center justify-between z-10 pt-1">
+              <span className="text-[10px] uppercase font-mono font-bold tracking-wider text-brand-400 px-2 py-0.5 rounded-full bg-brand-500/15 border border-brand-500/25">
+                {media.type === "tv" ? "TV Series" : "Cinema"}
+              </span>
+              {media.releaseYear && (
+                <span className="text-[10px] font-mono text-foreground-muted">{media.releaseYear}</span>
+              )}
             </div>
-            <p className="text-xs font-bold text-foreground line-clamp-3">{media.title}</p>
-            <span className="text-[10px] text-foreground-muted/60 mt-1 uppercase font-mono">No Poster</span>
+
+            {/* Center Title and Icon */}
+            <div className="my-auto flex flex-col items-center gap-2 max-w-[92%] z-10">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-600/30 to-brand-400/20 text-brand-300 flex items-center justify-center shadow-lg border border-brand-500/25 group-hover:scale-110 transition-transform duration-300">
+                {media.type === "tv" ? <Tv className="w-6 h-6" /> : <Film className="w-6 h-6" />}
+              </div>
+              <p className="text-sm font-bold text-foreground line-clamp-3 leading-snug tracking-tight">
+                {media.title}
+              </p>
+              {media.genres?.[0] && (
+                <span className="text-[10px] text-foreground-muted uppercase tracking-wider">
+                  {media.genres.slice(0, 2).join(" • ")}
+                </span>
+              )}
+            </div>
+
+            {/* Bottom Brand Watermark */}
+            <div className="w-full text-center z-10 pb-1">
+              <span className="text-[9px] text-brand-400/70 font-mono tracking-widest uppercase">
+                Vybe Stream
+              </span>
+            </div>
           </div>
         )}
 

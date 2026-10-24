@@ -34,7 +34,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     director: "Denis Villeneuve",
     featured: true,
     trendingRank: 1,
-    languageAvailable: ["eng", "hindi", "french"],
+    languageAvailable: ["eng", "french"],
     cast: [
       { id: "c-1", name: "Timothée Chalamet", character: "Paul Atreides" },
       { id: "c-2", name: "Zendaya", character: "Chani" },
@@ -63,7 +63,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     genres: ["Sci-Fi", "Drama", "Adventure"],
     director: "Christopher Nolan",
     trendingRank: 2,
-    languageAvailable: ["eng", "hindi"],
+    languageAvailable: ["eng"],
     cast: [
       { id: "c-6", name: "Matthew McConaughey", character: "Joseph Cooper" },
       { id: "c-7", name: "Anne Hathaway", character: "Dr. Amelia Brand" },
@@ -91,7 +91,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     genres: ["Animation", "Sci-Fi", "Action", "Anime"],
     director: "Christian Linke, Alex Yee",
     trendingRank: 3,
-    languageAvailable: ["eng", "french", "hindi"],
+    languageAvailable: ["eng", "french"],
     cast: [
       { id: "c-10", name: "Hailee Steinfeld", character: "Vi" },
       { id: "c-11", name: "Ella Purnell", character: "Jinx" },
@@ -177,7 +177,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     genres: ["Drama", "Crime", "Thriller"],
     director: "Vince Gilligan",
     trendingRank: 4,
-    languageAvailable: ["eng", "hindi"],
+    languageAvailable: ["eng", "spanish"],
     cast: [
       { id: "c-14", name: "Bryan Cranston", character: "Walter White" },
       { id: "c-15", name: "Aaron Paul", character: "Jesse Pinkman" },
@@ -235,7 +235,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     genres: ["Sci-Fi", "Action", "Thriller"],
     director: "Christopher Nolan",
     trendingRank: 5,
-    languageAvailable: ["eng", "hindi"],
+    languageAvailable: ["eng"],
     cast: [
       { id: "c-18", name: "Leonardo DiCaprio", character: "Dom Cobb" },
       { id: "c-19", name: "Joseph Gordon-Levitt", character: "Arthur" },
@@ -302,7 +302,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     overview:
       "Several hundred years ago, humans were nearly exterminated by giants. Giants are typically several stories tall, seem to have no intelligence, devour human beings and, worst of all, seem to do it for the pleasure rather than as a food source. A small percentage of humanity survived by enclosing themselves in a city protected by extremely high walls.",
     posterUrl: "https://image.tmdb.org/t/p/w500/hTP1DtLGFamjfu8WqjnuQdP1n4i.jpg",
-    backdropUrl: "https://image.tmdb.org/t/p/w1280/8BQX7YkM1Qe5D9V33x5C24P033n.jpg",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/rqbCbjB19amtOtFQbb3K2lgm2zv.jpg",
     rating: 9.0,
     voteCount: 16500,
     releaseYear: "2013",
@@ -312,7 +312,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     genres: ["Anime", "Action", "Fantasy", "Sci-Fi"],
     director: "Tetsurō Araki",
     trendingRank: 4,
-    languageAvailable: ["eng", "japanese", "french", "hindi"],
+    languageAvailable: ["eng", "japanese", "french"],
     cast: [
       { id: "c-aot1", name: "Yuki Kaji", character: "Eren Yeager" },
       { id: "c-aot2", name: "Yui Ishikawa", character: "Mikasa Ackerman" },
@@ -330,14 +330,14 @@ export const DEMO_MEDIA: MediaItem[] = [
             title: "To You, in 2000 Years: The Fall of Shiganshina, Part 1",
             overview: "After 100 years of peace, humanity is suddenly reminded of the terror of being at the Titans' mercy.",
             duration: "24m",
-            thumbnailUrl: "https://image.tmdb.org/t/p/w1280/8BQX7YkM1Qe5D9V33x5C24P033n.jpg",
+            thumbnailUrl: "https://image.tmdb.org/t/p/w1280/rqbCbjB19amtOtFQbb3K2lgm2zv.jpg",
           },
           {
             episodeNumber: 2,
             title: "That Day: The Fall of Shiganshina, Part 2",
             overview: "Eren vows to wipe out every last Titan following Shiganshina's breach.",
             duration: "24m",
-            thumbnailUrl: "https://image.tmdb.org/t/p/w1280/8BQX7YkM1Qe5D9V33x5C24P033n.jpg",
+            thumbnailUrl: "https://image.tmdb.org/t/p/w1280/rqbCbjB19amtOtFQbb3K2lgm2zv.jpg",
           },
         ],
       },
@@ -352,7 +352,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     overview:
       "It is the Taisho Period in Japan. Tanjiro, a kindhearted boy who sells charcoal for a living, finds his family slaughtered by a demon. To make matters worse, his younger sister Nezuko, the sole survivor, has been transformed into a demon herself. Tanjiro resolves to become a demon slayer so he can turn his sister back into a human and kill the demon that massacred his family.",
     posterUrl: "https://image.tmdb.org/t/p/w500/xUfRZu2mi8jH6SzQEJGP6tjBuYj.jpg",
-    backdropUrl: "https://image.tmdb.org/t/p/w1280/nTvM4mhqZlHIvUkI1gVnWumrSlq.jpg",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/3GQKYh6Trm8pxd2AypovoYQf4Ay.jpg",
     rating: 8.7,
     voteCount: 14100,
     releaseYear: "2019",
@@ -362,7 +362,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     genres: ["Anime", "Action", "Fantasy", "Adventure"],
     director: "Haruo Sotozaki",
     trendingRank: 5,
-    languageAvailable: ["eng", "japanese", "hindi"],
+    languageAvailable: ["eng", "japanese"],
     cast: [
       { id: "c-ds1", name: "Natsuki Hanae", character: "Tanjiro Kamado" },
       { id: "c-ds2", name: "Akari Kito", character: "Nezuko Kamado" },
@@ -380,7 +380,7 @@ export const DEMO_MEDIA: MediaItem[] = [
             title: "Cruelty",
             overview: "Tanjiro Kamado's peaceful life changes forever when his family is attacked by a demon.",
             duration: "24m",
-            thumbnailUrl: "https://image.tmdb.org/t/p/w1280/nTvM4mhqZlHIvUkI1gVnWumrSlq.jpg",
+            thumbnailUrl: "https://image.tmdb.org/t/p/w1280/3GQKYh6Trm8pxd2AypovoYQf4Ay.jpg",
           },
         ],
       },
@@ -394,8 +394,8 @@ export const DEMO_MEDIA: MediaItem[] = [
     tagline: "Curse the world or save it.",
     overview:
       "A boy swallows a cursed talisman - the finger of a demon - and becomes cursed himself. He enters a shaman's school to be able to locate the demon's other body parts and thus exorcise himself.",
-    posterUrl: "https://image.tmdb.org/t/p/w500/hFWP5HkbVEe40hrXgtCe5xQC64n.jpg",
-    backdropUrl: "https://image.tmdb.org/t/p/w1280/4fJ8y9vK17mX77rM921D3F8R3uL.jpg",
+    posterUrl: "https://image.tmdb.org/t/p/w500/6qQzMJG27XOJsyAEEIisoJB45j2.jpg",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/qpin8cASXEVtwhzNsprHYFiOAGk.jpg",
     rating: 8.6,
     voteCount: 11200,
     releaseYear: "2020",
@@ -422,7 +422,7 @@ export const DEMO_MEDIA: MediaItem[] = [
             title: "Ryomen Sukuna",
             overview: "Yuji Itadori swallows a cursed talisman to save his friends.",
             duration: "24m",
-            thumbnailUrl: "https://image.tmdb.org/t/p/w1280/4fJ8y9vK17mX77rM921D3F8R3uL.jpg",
+            thumbnailUrl: "https://image.tmdb.org/t/p/w1280/qpin8cASXEVtwhzNsprHYFiOAGk.jpg",
           },
         ],
       },
@@ -437,7 +437,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     overview:
       "Light Yagami is an ace student with great prospects, who's bored out of his mind. One day he finds the 'Death Note': a notebook dropped by a rogue Shinigami death god. Any human whose name is written in the notebook dies, and Light has vowed to use the power of the Death Note to rid the world of evil.",
     posterUrl: "https://image.tmdb.org/t/p/w500/tC78Pck2YCsUAtEdZwuHYUFYtOj.jpg",
-    backdropUrl: "https://image.tmdb.org/t/p/w1280/iJ2pY5t4gP9v3t4P8a2Y7z4u4Q8.jpg",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/z8IPicmEKXUO4I2UDdMEqw7RqOE.jpg",
     rating: 8.6,
     voteCount: 18400,
     releaseYear: "2006",
@@ -461,8 +461,8 @@ export const DEMO_MEDIA: MediaItem[] = [
     tagline: "Only I level up.",
     overview:
       "They say whatever doesn't kill you makes you stronger, but that's not the case for the world's weakest hunter Sung Jinwoo. After being brutally slaughtered by monsters in a high-ranking dungeon, Jinwoo came back with the System, a program only he can see, that's leveling him up in every way.",
-    posterUrl: "https://image.tmdb.org/t/p/w500/geCRueV3ElhRTr0xtJuClJknQd7.jpg",
-    backdropUrl: "https://image.tmdb.org/t/p/w1280/4fF81t4v8tV29t4y8F827h9k2L.jpg",
+    posterUrl: "https://image.tmdb.org/t/p/w500/dqZENchTd7lp5zht7BdlqM7RBhD.jpg",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/rBOnrVlck7BIlGeWVlzYiZeg4l2.jpg",
     rating: 8.6,
     voteCount: 3800,
     releaseYear: "2024",
@@ -472,7 +472,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     genres: ["Anime", "Action", "Fantasy", "Sci-Fi"],
     director: "Shunsuke Nakashige",
     trendingRank: 2,
-    languageAvailable: ["eng", "japanese", "hindi"],
+    languageAvailable: ["eng", "japanese"],
     cast: [
       { id: "c-sl1", name: "Taito Ban", character: "Sung Jinwoo" },
       { id: "c-sl2", name: "Genta Nakamura", character: "Yoo Jinho" },
@@ -486,8 +486,8 @@ export const DEMO_MEDIA: MediaItem[] = [
     tagline: "Tear through the darkness.",
     overview:
       "Denji is a young man who works as a Devil Hunter with Pochita, the 'Chainsaw Devil'. While living his miserable life paying off debts he inherited from his parents, he gets betrayed and killed. But as he's losing consciousness, Pochita makes a contract with Denji, and he revives as 'Chainsaw Man'.",
-    posterUrl: "https://image.tmdb.org/t/p/w500/npdB6eFz43J7AlvxagFUHp3L2io.jpg",
-    backdropUrl: "https://image.tmdb.org/t/p/w1280/wFjBoEos19SV5rdv24v20k85n.jpg",
+    posterUrl: "https://image.tmdb.org/t/p/w500/npdB6eFzizki0WaZ1OvKcJrWe97.jpg",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/5DUMPBSnHOZsbBv81GFXZXvDpo6.jpg",
     rating: 8.4,
     voteCount: 4600,
     releaseYear: "2022",
@@ -511,8 +511,8 @@ export const DEMO_MEDIA: MediaItem[] = [
     tagline: "The tunnel led to a mysterious spirit world.",
     overview:
       "A young girl, Chihiro, becomes trapped in a strange new world of spirits. When her parents undergo a mysterious transformation, she must call upon the courage she never knew she had to free her family.",
-    posterUrl: "https://image.tmdb.org/t/p/w500/393mh1AJ0GYWVD7DesqY95qnvAc.jpg",
-    backdropUrl: "https://image.tmdb.org/t/p/w1280/Ab8mkHmkYADjU7wQiOkia99GQI.jpg",
+    posterUrl: "https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/m4TUa2ciEWSlk37rOsjiSIvZDXE.jpg",
     rating: 8.5,
     voteCount: 16200,
     releaseYear: "2001",
@@ -536,8 +536,8 @@ export const DEMO_MEDIA: MediaItem[] = [
     tagline: "I am looking for you, whom I have never met.",
     overview:
       "High schoolers Mitsuha and Taki are complete strangers living separate lives in Tokyo and rural Japan. But when they suddenly swap bodies, a bizarre connection forms between them that transcends time and space.",
-    posterUrl: "https://image.tmdb.org/t/p/w500/q719jXXEzvNyfqiaS1mD9alj1p.jpg",
-    backdropUrl: "https://image.tmdb.org/t/p/w1280/dIWwZW7dJJ1q499NVWpvLJvzyJJ.jpg",
+    posterUrl: "https://image.tmdb.org/t/p/w500/vfJFJPepRKapMd5G2ro7klIRysq.jpg",
+    backdropUrl: "https://image.tmdb.org/t/p/w1280/mMtUybQ6hL24FXo0F3Z4j2KG7kZ.jpg",
     rating: 8.5,
     voteCount: 11400,
     releaseYear: "2016",
@@ -573,7 +573,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     genres: ["Drama", "Thriller"],
     director: "David Fincher",
     trendingRank: 7,
-    languageAvailable: ["eng", "hindi"],
+    languageAvailable: ["eng"],
     cast: [
       { id: "c-25", name: "Edward Norton", character: "The Narrator" },
       { id: "c-26", name: "Brad Pitt", character: "Tyler Durden" },
@@ -600,7 +600,7 @@ export const DEMO_MEDIA: MediaItem[] = [
     genres: ["Action", "Sci-Fi", "Adventure"],
     director: "Jon Favreau",
     trendingRank: 8,
-    languageAvailable: ["eng", "hindi"],
+    languageAvailable: ["eng"],
     cast: [
       { id: "c-28", name: "Robert Downey Jr.", character: "Tony Stark / Iron Man" },
       { id: "c-29", name: "Gwyneth Paltrow", character: "Pepper Potts" },
@@ -1225,8 +1225,7 @@ export function getAllIndianSeries(): MediaItem[] {
         m.id.startsWith("tv-101352") ||
         m.id.startsWith("tv-132117") ||
         m.id.startsWith("tv-111188") ||
-        m.id.startsWith("tv-100911") ||
-        m.languageAvailable?.includes("hindi"))
+        m.id.startsWith("tv-100911"))
   );
 }
 
