@@ -17,6 +17,8 @@ import {
   Layers,
   ArrowDownToLine,
   CheckCircle2,
+  Play,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { getTorrentStreams, TorrentStream } from "@/lib/torrents";
@@ -48,6 +50,8 @@ export function DownloadCenterModal({
   const [error, setError] = useState<string | null>(null);
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
   const [downloadingHash, setDownloadingHash] = useState<string | null>(null);
+  const [openedHash, setOpenedHash] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "hindi" | "4k" | "1080p" | "720p">("all");
   const [viewMode, setViewMode] = useState<"direct" | "cdn">("direct");
   const [mounted, setMounted] = useState<boolean>(false);
@@ -91,9 +95,10 @@ export function DownloadCenterModal({
   const handleCopy = (hash: string, magnetUrl: string) => {
     navigator.clipboard.writeText(magnetUrl);
     setCopiedHash(hash);
+    setToastMessage("Magnet link copied to clipboard! Paste into qBittorrent, Stremio, or VLC.");
     setTimeout(() => {
       setCopiedHash((prev) => (prev === hash ? null : prev));
-    }, 2000);
+    }, 2500);
   };
 
   /**
@@ -123,6 +128,10 @@ export function DownloadCenterModal({
       downloadLink.click();
       document.body.removeChild(downloadLink);
 
+      setToastMessage(
+        `Downloaded "${safeTitle}.torrent"! Open it directly in your torrent application.`
+      );
+
       // Clean up object URL
       setTimeout(() => {
         URL.revokeObjectURL(blobUrl);
@@ -142,6 +151,50 @@ export function DownloadCenterModal({
         setDownloadingHash(null);
       }, 2500);
     }
+  };
+
+  /**
+   * Universal "Open in App" Trigger:
+   * 1. Copies magnet link to clipboard so user can always paste into qBittorrent/Stremio/VLC.
+   * 2. Dispatches magnet URL protocol via synthetic anchor click and window.location.
+   * 3. Also downloads the .torrent descriptor file as a guaranteed fallback.
+   * 4. Updates UI state with real-time feedback and guidance toast.
+   */
+  const handleOpenInApp = (stream: TorrentStream) => {
+    setOpenedHash(stream.infoHash);
+
+    // 1. Copy magnet to clipboard
+    try {
+      navigator.clipboard.writeText(stream.magnetUrl);
+    } catch (e) {}
+
+    // 2. Dispatch protocol to open client app
+    try {
+      const a = document.createElement("a");
+      a.href = stream.magnetUrl;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        if (a.parentNode) a.parentNode.removeChild(a);
+      }, 500);
+    } catch (err) {}
+
+    try {
+      window.location.assign(stream.magnetUrl);
+    } catch (err) {}
+
+    // 3. Download .torrent file as reliable fallback
+    handleDownloadFile(stream);
+
+    // 4. Show friendly guidance toast
+    setToastMessage(
+      "🚀 App launched & magnet copied! If your app didn't auto-open, press Ctrl+V / Cmd+V in qBittorrent, Stremio, or VLC, or click the downloaded .torrent file."
+    );
+
+    setTimeout(() => {
+      setOpenedHash((prev) => (prev === stream.infoHash ? null : prev));
+    }, 4000);
   };
 
   const filteredStreams = streams.filter((s) => {
@@ -270,6 +323,23 @@ export function DownloadCenterModal({
               </div>
             </div>
 
+            {/* Active Action Toast Banner */}
+            {toastMessage && (
+              <div className="px-6 py-2.5 bg-gradient-to-r from-emerald-500/15 via-brand-500/15 to-emerald-500/15 border-b border-emerald-500/30 flex items-center justify-between text-xs text-foreground animate-fadeIn gap-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="leading-tight">{toastMessage}</span>
+                </div>
+                <button
+                  onClick={() => setToastMessage(null)}
+                  className="p-1 rounded-md text-foreground-muted hover:text-foreground shrink-0"
+                  aria-label="Dismiss message"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
             {/* Download Links List */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 custom-scrollbar">
               {loading ? (
@@ -319,6 +389,7 @@ export function DownloadCenterModal({
               ) : (
                 filteredStreams.map((s) => {
                   const isCopied = copiedHash === s.infoHash;
+                  const isOpened = openedHash === s.infoHash;
                   const isDownloading = downloadingHash === s.infoHash;
                   const isHindi = s.quality.includes("Hindi");
 
@@ -372,14 +443,14 @@ export function DownloadCenterModal({
                         </div>
                       </div>
 
-                      {/* Action Buttons: Download File, Open in App, Copy Link */}
+                      {/* Action Buttons: Download File, Open in App, Stremio Web, Copy Link */}
                       <div className="flex items-center gap-2 sm:self-end lg:self-center shrink-0 flex-wrap">
                         {/* 1. Direct Download Button (triggers in-browser file download) */}
                         <button
                           type="button"
                           onClick={() => handleDownloadFile(s)}
                           className={cn(
-                            "inline-flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-md",
+                            "inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-md",
                             isDownloading
                               ? "bg-emerald-600 text-white border border-emerald-500"
                               : "bg-brand-600 hover:bg-brand-500 text-white shadow-brand-600/30"
@@ -399,17 +470,45 @@ export function DownloadCenterModal({
                           )}
                         </button>
 
-                        {/* 2. Open in Torrent App */}
-                        <a
-                          href={s.magnetUrl}
-                          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold bg-surface-hover hover:bg-surface-border text-foreground border border-surface-border transition-all active:scale-95"
-                          title="Open in your torrent downloader application (qBittorrent, Stremio, uTorrent, VLC)"
+                        {/* 2. Open in Torrent App (Direct protocol launch + Auto-copy + .torrent trigger) */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenInApp(s)}
+                          className={cn(
+                            "inline-flex items-center gap-1.5 h-9 px-3 rounded-xl text-xs font-semibold transition-all active:scale-95",
+                            isOpened
+                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 shadow-sm"
+                              : "bg-surface-hover hover:bg-surface-border text-foreground border border-surface-border hover:border-brand-500/40"
+                          )}
+                          title="Launch directly in your torrent application (qBittorrent, Stremio, VLC, uTorrent)"
                         >
-                          <Magnet className="w-3.5 h-3.5 text-indigo-400" />
-                          <span className="hidden sm:inline">Open in App</span>
+                          {isOpened ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Launched &amp; Copied!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Magnet className="w-3.5 h-3.5 text-indigo-400" />
+                              <span>Open in App</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* 3. Stremio Web Player (Instant browser stream) */}
+                        <a
+                          href={`https://web.stremio.com/#/player/biX${s.infoHash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 h-9 px-2.5 rounded-xl text-[11px] font-medium bg-surface text-foreground-muted hover:text-foreground border border-surface-border hover:bg-surface-hover transition-colors"
+                          title="Stream in Stremio Web without installing apps"
+                        >
+                          <Play className="w-3 h-3 text-purple-400" />
+                          <span className="hidden sm:inline">Stremio Web</span>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-50" />
                         </a>
 
-                        {/* 3. Copy Direct Link */}
+                        {/* 4. Copy Direct Link */}
                         <button
                           type="button"
                           onClick={() => handleCopy(s.infoHash, s.magnetUrl)}
