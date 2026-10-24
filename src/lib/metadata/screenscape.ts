@@ -2,6 +2,7 @@ import { MetadataProvider } from "./provider";
 import { MediaItem, Genre, PaginatedResult, ProviderStatus, Season } from "../types";
 import { DEMO_MEDIA, DEMO_GENRES } from "../demoData";
 import { getRegionByCode } from "../regions";
+import screenscapeIndianCatalog from "../data/screenscapeIndian.json";
 
 const SCREENSCAPE_BASE_API = "https://web.screenscape.fun/api";
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
@@ -764,13 +765,13 @@ export class ScreenScapeProvider implements MetadataProvider {
       return this.getTrending(mediaType, "week", page);
     }
 
-    // Special handling for India: Pan-India multi-language aggregation
+    // Special handling for India: Pan-India multi-language aggregation (All 894+ Movies & 43+ Web Series)
     if (code === "IN") {
       const activeLang = subLang && subLang !== "all" ? subLang.toLowerCase() : null;
 
       try {
         if (activeLang) {
-          // Specific Indian language chosen (e.g. Telugu, Tamil, Hindi, Malayalam, Kannada)
+          // Specific Indian language chosen (Hindi, Tamil, Telugu, Malayalam, Bengali, Kannada, Marathi, Punjabi)
           const targetType = mediaType === "all" ? "movie" : mediaType;
           const res = await fetch(
             `${SCREENSCAPE_BASE_API}/languages/discover?lang=${activeLang}&type=${targetType}&page=${page}`,
@@ -784,16 +785,43 @@ export class ScreenScapeProvider implements MetadataProvider {
             const results = (data.results || []).map((r: any) =>
               this.mapScreenScapeItem(r, targetType)
             );
-            return {
-              page: data.page || page,
-              totalPages: data.total_pages || 1,
-              totalResults: data.total_results || results.length,
-              results,
-            };
+            if (results.length > 0) {
+              return {
+                page: data.page || page,
+                totalPages: data.total_pages || 1,
+                totalResults: data.total_results || results.length,
+                results,
+              };
+            }
           }
+
+          // Fallback to pre-indexed ScreenScape catalog filtered by this specific language
+          const sourceList = targetType === "tv"
+            ? (screenscapeIndianCatalog.tv as any[])
+            : (screenscapeIndianCatalog.movies as any[]);
+          const filtered = sourceList.filter((m: any) =>
+            m.languageAvailable?.includes(activeLang) ||
+            (activeLang === "hi" && m.languageAvailable?.includes("hindi")) ||
+            (activeLang === "ta" && m.languageAvailable?.includes("tamil")) ||
+            (activeLang === "te" && m.languageAvailable?.includes("telugu")) ||
+            (activeLang === "ml" && m.languageAvailable?.includes("malayalam")) ||
+            (activeLang === "bn" && m.languageAvailable?.includes("bengali")) ||
+            (activeLang === "kn" && m.languageAvailable?.includes("kannada")) ||
+            (activeLang === "mr" && m.languageAvailable?.includes("marathi")) ||
+            (activeLang === "pa" && m.languageAvailable?.includes("punjabi"))
+          );
+          const pageSize = 20;
+          const start = (page - 1) * pageSize;
+          const paged = filtered.slice(start, start + pageSize);
+          return {
+            page,
+            totalPages: Math.ceil(filtered.length / pageSize) || 1,
+            totalResults: filtered.length,
+            results: paged.map((r: any) => this.mapScreenScapeItem(r, targetType)),
+          };
         } else {
-          // Pan-India: Fetch all major Indian cinema industries concurrently & interleave
-          const indianLangs = ["hi", "te", "ta", "ml", "kn"];
+          // Pan-India: Fetch all 8 Indian cinema industries concurrently (Hindi, Tamil, Telugu, Malayalam, Kannada, Bengali, Marathi, Punjabi)
+          const indianLangs = ["hi", "ta", "te", "ml", "kn", "bn", "mr", "pa"];
           const moviePromises = (mediaType === "all" || mediaType === "movie")
             ? indianLangs.map((l) =>
                 fetch(
@@ -826,7 +854,7 @@ export class ScreenScapeProvider implements MetadataProvider {
             this.mapScreenScapeItem(r, "tv")
           );
 
-          // Interleave Bollywood, Tollywood, Kollywood, Mollywood, Sandalwood, and Indian TV
+          // Interleave Bollywood, Tollywood, Kollywood, Mollywood, Sandalwood, Bengali, Marathi, Punjabi, and Indian Web Series
           const combined: MediaItem[] = [];
           const seen = new Set<string>();
           const maxCount = Math.max(...movieLists.map((l) => l.length), tvList.length);
@@ -845,16 +873,48 @@ export class ScreenScapeProvider implements MetadataProvider {
           }
 
           if (combined.length > 0) {
+            const totalCount = screenscapeIndianCatalog.totalMovies + (mediaType === "movie" ? 0 : screenscapeIndianCatalog.totalTv);
             return {
               page,
-              totalPages: 35,
-              totalResults: 900,
+              totalPages: Math.max(38, Math.ceil(totalCount / combined.length)),
+              totalResults: totalCount,
               results: combined,
             };
           }
+
+          // Fallback to complete pre-indexed ScreenScape catalog across pages
+          const allItems = mediaType === "movie"
+            ? (screenscapeIndianCatalog.movies as any[])
+            : mediaType === "tv"
+            ? (screenscapeIndianCatalog.tv as any[])
+            : [...(screenscapeIndianCatalog.movies as any[]), ...(screenscapeIndianCatalog.tv as any[])];
+          const pageSize = 24;
+          const start = (page - 1) * pageSize;
+          const paged = allItems.slice(start, start + pageSize);
+          return {
+            page,
+            totalPages: Math.ceil(allItems.length / pageSize) || 1,
+            totalResults: allItems.length,
+            results: paged.map((r: any) => this.mapScreenScapeItem(r, r.type)),
+          };
         }
       } catch (err) {
         console.warn("ScreenScapeProvider.getByRegion(IN) multi-language error:", err);
+        // Guaranteed fallback from complete ScreenScape catalog
+        const allItems = mediaType === "movie"
+          ? (screenscapeIndianCatalog.movies as any[])
+          : mediaType === "tv"
+          ? (screenscapeIndianCatalog.tv as any[])
+          : [...(screenscapeIndianCatalog.movies as any[]), ...(screenscapeIndianCatalog.tv as any[])];
+        const pageSize = 24;
+        const start = (page - 1) * pageSize;
+        const paged = allItems.slice(start, start + pageSize);
+        return {
+          page,
+          totalPages: Math.ceil(allItems.length / pageSize) || 1,
+          totalResults: allItems.length,
+          results: paged.map((r: any) => this.mapScreenScapeItem(r, r.type)),
+        };
       }
     }
 

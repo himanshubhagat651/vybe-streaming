@@ -179,6 +179,16 @@ export function RegionTabBar({
               >
                 <span>{lang.flag}</span>
                 <span>{lang.name}</span>
+                {typeof lang.count === "number" && (
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded-full font-mono font-medium transition-colors",
+                    isSubSelected
+                      ? "bg-amber-500/30 text-amber-200 border border-amber-500/40"
+                      : "bg-surface text-foreground-muted border border-surface-border"
+                  )}>
+                    {lang.count}
+                  </span>
+                )}
                 <span className="text-[10px] opacity-70 hidden sm:inline">
                   • {lang.industry}
                 </span>

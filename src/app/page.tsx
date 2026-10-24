@@ -31,6 +31,8 @@ export default function HomePage() {
   const [trendingSeries, setTrendingSeries] = useState<MediaItem[]>([]);
   const [popularSeries, setPopularSeries] = useState<MediaItem[]>([]);
   const [animeList, setAnimeList] = useState<MediaItem[]>([]);
+  const [indianCinemaList, setIndianCinemaList] = useState<MediaItem[]>([]);
+  const [indianSeriesList, setIndianSeriesList] = useState<MediaItem[]>([]);
   const [trendingAll, setTrendingAll] = useState<MediaItem[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
   const [activeGenre, setActiveGenre] = useState("all");
@@ -150,15 +152,25 @@ export default function HomePage() {
     setIsLoading(true);
     setError(null);
     try {
-      const [trendingData, trendingSeriesData, popSeriesData, trendingMoviesData, genreList, animeData] =
-        await Promise.all([
-          fetchTrending("all", "day", 1),
-          fetchTrending("tv", "day", 1),
-          fetchPopular("tv", 1),
-          fetchPopular("movie", 1),
-          fetchGenres("movie"),
-          fetchByGenre("anime").catch(() => ({ results: [] })),
-        ]);
+      const [
+        trendingData,
+        trendingSeriesData,
+        popSeriesData,
+        trendingMoviesData,
+        genreList,
+        animeData,
+        indianMoviesData,
+        indianTvData,
+      ] = await Promise.all([
+        fetchTrending("all", "day", 1),
+        fetchTrending("tv", "day", 1),
+        fetchPopular("tv", 1),
+        fetchPopular("movie", 1),
+        fetchGenres("movie"),
+        fetchByGenre("anime").catch(() => ({ results: [] })),
+        fetchByRegion("IN", "movie", 1).catch(() => ({ results: [] })),
+        fetchByRegion("IN", "tv", 1).catch(() => ({ results: [] })),
+      ]);
 
       const allItems = trendingData.results || [];
       setTrendingAll(allItems);
@@ -172,6 +184,15 @@ export default function HomePage() {
       setPopularSeries(popSeriesData.results || []);
       setTrendingMovies(trendingMoviesData.results || []);
       setAnimeList(animeData.results || []);
+
+      const cinemaResults = (indianMoviesData?.results?.length ?? 0) > 0
+        ? indianMoviesData.results
+        : getAllIndianCinema();
+      const seriesResults = (indianTvData?.results?.length ?? 0) > 0
+        ? indianTvData.results
+        : getAllIndianSeries();
+      setIndianCinemaList(cinemaResults);
+      setIndianSeriesList(seriesResults);
 
       const listWithAnime = [...(genreList || [])];
       if (!listWithAnime.some((g) => g.slug === "anime")) {
@@ -517,17 +538,40 @@ export default function HomePage() {
           {/* Dedicated Indian Cinema Row (Pan-India: Bollywood, Tollywood, Kollywood, Mollywood, Sandalwood) */}
           <MediaRow
             title="🇮🇳 Desi Hits & Pan-Indian Cinema"
-            subtitle="Blockbusters across Bollywood, Tollywood, Kollywood, Mollywood & Sandalwood"
-            items={getAllIndianCinema()}
-            viewAllHref="/browse?region=IN"
+            subtitle="Blockbusters across Bollywood, Tollywood, Kollywood, Mollywood, Sandalwood & regional industries"
+            items={indianCinemaList.length > 0 ? indianCinemaList : getAllIndianCinema()}
+            viewAllHref="/browse?region=IN&type=movie"
             onOpenInfo={(item) => setSelectedMedia(item)}
           />
+
+          {/* Dedicated South Indian Cinema Row (Tollywood, Kollywood, Mollywood, Sandalwood) */}
+          {(() => {
+            const southMovies = (indianCinemaList.length > 0 ? indianCinemaList : getAllIndianCinema()).filter(
+              (m) =>
+                m.languageAvailable?.some((l) =>
+                  ["te", "ta", "ml", "kn", "telugu", "tamil", "malayalam", "kannada"].includes(l)
+                ) ||
+                ["579974", "587412", "937020", "949229", "1075794", "770906", "350312", "256040"].some((id) =>
+                  m.id.includes(id)
+                )
+            );
+            if (southMovies.length === 0) return null;
+            return (
+              <MediaRow
+                title="🔥 South Indian Blockbusters"
+                subtitle="High-octane mass cinema & acclaimed gems from Tollywood, Kollywood, Mollywood & Sandalwood"
+                items={southMovies}
+                viewAllHref="/browse?region=IN&subLang=te"
+                onOpenInfo={(item) => setSelectedMedia(item)}
+              />
+            );
+          })()}
 
           {/* Dedicated Indian Web Series & OTT Hits */}
           <MediaRow
             title="🇮🇳 Top Indian Web Series & OTT Hits"
-            subtitle="Binge-worthy Indian crime thrillers, drama, and comedy series"
-            items={getAllIndianSeries()}
+            subtitle="Binge-worthy Indian crime thrillers, drama, and comedy series (Mirzapur, Sacred Games, The Family Man, Panchayat)"
+            items={indianSeriesList.length > 0 ? indianSeriesList : getAllIndianSeries()}
             viewAllHref="/browse?region=IN&type=tv"
             onOpenInfo={(item) => setSelectedMedia(item)}
           />

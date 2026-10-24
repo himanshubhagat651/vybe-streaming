@@ -14,17 +14,19 @@ export interface IndianLanguage {
   nativeName: string;
   industry: string;
   flag: string;
+  count?: number;
 }
 
 export const INDIAN_LANGUAGES: IndianLanguage[] = [
-  { code: "all", name: "All India", nativeName: "अखिल भारतीय", industry: "Pan-India Blockbusters", flag: "🇮🇳" },
-  { code: "hi", name: "Hindi", nativeName: "हिन्दी", industry: "Bollywood", flag: "🎬" },
-  { code: "te", name: "Telugu", nativeName: "తెలుగు", industry: "Tollywood", flag: "🔥" },
-  { code: "ta", name: "Tamil", nativeName: "தமிழ்", industry: "Kollywood", flag: "⚡" },
-  { code: "ml", name: "Malayalam", nativeName: "മലയാളം", industry: "Mollywood", flag: "🌴" },
-  { code: "kn", name: "Kannada", nativeName: "ಕನ್ನಡ", industry: "Sandalwood", flag: "👑" },
-  { code: "pa", name: "Punjabi", nativeName: "ਪੰਜਾਬੀ", industry: "Pollywood", flag: "💥" },
-  { code: "bn", name: "Bengali", nativeName: "বাংলা", industry: "Tollywood East", flag: "🎭" },
+  { code: "all", name: "All India", nativeName: "अखिल भारतीय", industry: "Pan-India Blockbusters", flag: "🇮🇳", count: 892 },
+  { code: "hi", name: "Hindi", nativeName: "हिन्दी", industry: "Bollywood", flag: "🎬", count: 632 },
+  { code: "ta", name: "Tamil", nativeName: "தமிழ்", industry: "Kollywood", flag: "⚡", count: 139 },
+  { code: "te", name: "Telugu", nativeName: "తెలుగు", industry: "Tollywood", flag: "🔥", count: 57 },
+  { code: "ml", name: "Malayalam", nativeName: "മലയാളം", industry: "Mollywood", flag: "🌴", count: 51 },
+  { code: "bn", name: "Bengali", nativeName: "বাংলা", industry: "Tollywood East", flag: "🎭", count: 16 },
+  { code: "kn", name: "Kannada", nativeName: "ಕನ್ನಡ", industry: "Sandalwood", flag: "👑", count: 10 },
+  { code: "mr", name: "Marathi", nativeName: "मराठी", industry: "Marathi Cinema", flag: "🦁", count: 3 },
+  { code: "pa", name: "Punjabi", nativeName: "ਪੰਜਾਬੀ", industry: "Pollywood", flag: "💥", count: 1 },
 ];
 
 export function getIndianLanguageByCode(code: string): IndianLanguage | undefined {

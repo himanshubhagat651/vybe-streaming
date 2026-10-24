@@ -110,37 +110,57 @@ function BrowseContent() {
         }
       }
 
-      // If viewing India and results are empty (offline / API issue), fallback to authentic Indian titles
+      // If viewing India and results are empty (offline / API issue), fallback to complete ScreenScape catalog
       if (region.toUpperCase() === "IN" && results.length === 0) {
         const cinema = getAllIndianCinema();
         const series = getAllIndianSeries();
         let fallback = type === "movie" ? cinema : type === "tv" ? series : [...cinema, ...series];
-        if (subLang !== "all") {
+        if (subLang && subLang !== "all") {
           fallback = fallback.filter((m) =>
             m.languageAvailable?.includes(subLang) ||
-            (subLang === "hi" && m.languageAvailable?.includes("hindi"))
+            (subLang === "hi" && m.languageAvailable?.includes("hindi")) ||
+            (subLang === "ta" && m.languageAvailable?.includes("tamil")) ||
+            (subLang === "te" && m.languageAvailable?.includes("telugu")) ||
+            (subLang === "ml" && m.languageAvailable?.includes("malayalam")) ||
+            (subLang === "bn" && m.languageAvailable?.includes("bengali")) ||
+            (subLang === "kn" && m.languageAvailable?.includes("kannada")) ||
+            (subLang === "mr" && m.languageAvailable?.includes("marathi")) ||
+            (subLang === "pa" && m.languageAvailable?.includes("punjabi"))
           );
         }
-        if (fallback.length > 0) {
-          results = fallback;
-        }
+        const pageSize = 24;
+        const total = Math.ceil(fallback.length / pageSize) || 1;
+        setTotalPages(total);
+        const start = (page - 1) * pageSize;
+        results = fallback.slice(start, start + pageSize);
+      } else {
+        setTotalPages(data.totalPages || 1);
       }
 
       setItems(results);
-      setTotalPages(data.totalPages || 1);
     } catch (err: any) {
       if (region.toUpperCase() === "IN") {
         const cinema = getAllIndianCinema();
         const series = getAllIndianSeries();
         let fallback = type === "movie" ? cinema : type === "tv" ? series : [...cinema, ...series];
-        if (subLang !== "all") {
+        if (subLang && subLang !== "all") {
           fallback = fallback.filter((m) =>
             m.languageAvailable?.includes(subLang) ||
-            (subLang === "hi" && m.languageAvailable?.includes("hindi"))
+            (subLang === "hi" && m.languageAvailable?.includes("hindi")) ||
+            (subLang === "ta" && m.languageAvailable?.includes("tamil")) ||
+            (subLang === "te" && m.languageAvailable?.includes("telugu")) ||
+            (subLang === "ml" && m.languageAvailable?.includes("malayalam")) ||
+            (subLang === "bn" && m.languageAvailable?.includes("bengali")) ||
+            (subLang === "kn" && m.languageAvailable?.includes("kannada")) ||
+            (subLang === "mr" && m.languageAvailable?.includes("marathi")) ||
+            (subLang === "pa" && m.languageAvailable?.includes("punjabi"))
           );
         }
-        setItems(fallback);
-        setTotalPages(1);
+        const pageSize = 24;
+        const total = Math.ceil(fallback.length / pageSize) || 1;
+        setTotalPages(total);
+        const start = (page - 1) * pageSize;
+        setItems(fallback.slice(start, start + pageSize));
       } else {
         setError(err.message || "Failed to load titles from metadata provider.");
         setItems([]);

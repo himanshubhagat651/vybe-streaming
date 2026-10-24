@@ -1,4 +1,5 @@
 import { MediaItem, Genre } from "./types";
+import screenscapeIndianCatalog from "./data/screenscapeIndian.json";
 
 export const DEMO_GENRES: Genre[] = [
   { id: "all", name: "All", slug: "all" },
@@ -1186,11 +1187,14 @@ export function getAllAnime(): MediaItem[] {
 }
 
 export function getAllIndianCinema(): MediaItem[] {
+  if (Array.isArray(screenscapeIndianCatalog?.movies) && screenscapeIndianCatalog.movies.length > 0) {
+    return screenscapeIndianCatalog.movies as unknown as MediaItem[];
+  }
   return DEMO_MEDIA.filter(
     (m) =>
       m.type === "movie" &&
       (m.languageAvailable?.some((l) =>
-        ["hindi", "te", "ta", "ml", "kn", "pa", "bn"].includes(l)
+        ["hindi", "te", "ta", "ml", "kn", "pa", "bn", "mr"].includes(l)
       ) ||
         m.id.startsWith("m-579974") ||
         m.id.startsWith("m-801688") ||
@@ -1209,6 +1213,9 @@ export function getAllIndianCinema(): MediaItem[] {
 }
 
 export function getAllIndianSeries(): MediaItem[] {
+  if (Array.isArray(screenscapeIndianCatalog?.tv) && screenscapeIndianCatalog.tv.length > 0) {
+    return screenscapeIndianCatalog.tv as unknown as MediaItem[];
+  }
   return DEMO_MEDIA.filter(
     (m) =>
       m.type === "tv" &&
