@@ -56,24 +56,26 @@ export function HeroBanner({ media, items, onOpenInfo }: HeroBannerProps) {
 
   return (
     <div
-      className="relative w-full h-[520px] xs:h-[540px] sm:h-[500px] md:h-[560px] lg:h-[620px] 2xl:h-[700px] 3xl:h-[800px] rounded-2xl sm:rounded-3xl overflow-hidden mb-6 sm:mb-8 md:mb-12 border border-surface-border shadow-2xl select-none bg-surface-hover group"
+      className="relative w-full flex flex-col sm:block sm:h-[500px] md:h-[560px] lg:h-[620px] 2xl:h-[700px] 3xl:h-[800px] rounded-2xl sm:rounded-3xl overflow-hidden mb-6 sm:mb-8 md:mb-12 border border-surface-border shadow-2xl select-none bg-surface-card group"
     >
       {/* Dynamic Ambient Glow behind banner */}
       <div className="ambient-halo -top-24 -left-24 w-72 sm:w-96 2xl:w-[32rem] h-72 sm:h-96 2xl:h-[32rem] bg-brand-600/30" />
       <div className="ambient-halo -bottom-24 -right-24 w-72 sm:w-96 2xl:w-[32rem] h-72 sm:h-96 2xl:h-[32rem] bg-indigo-600/30" />
 
-      {/* Live Trailer Video Stream (YouTube with DailyMotion fallback) */}
-      <div className="relative w-full h-full overflow-hidden">
+      {/* Live Trailer Video Stream - PINNED TO TOP on mobile (Full 16:9), Absolute cover on Desktop */}
+      <div className="relative w-full aspect-video sm:aspect-auto sm:absolute sm:inset-0 sm:w-full sm:h-full overflow-hidden bg-black shrink-0">
         <TrailerBackgroundPlayer
           key={activeMedia.tmdbId}
           title={activeMedia.title}
           year={activeMedia.releaseYear}
           aspectRatio="banner"
         />
+        {/* Subtle mobile bottom fade into card body */}
+        <div className="sm:hidden absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-surface-card to-transparent pointer-events-none" />
       </div>
 
       {/* Hero Content Overlay (Fluid padding & typography for mobile to TV) */}
-      <div className="absolute inset-0 flex flex-col justify-end p-4 xs:p-5 sm:p-8 md:p-12 2xl:p-16 max-w-full sm:max-w-2xl md:max-w-3xl 2xl:max-w-5xl space-y-2 sm:space-y-3.5 z-10 pointer-events-none">
+      <div className="relative sm:absolute sm:inset-0 flex flex-col justify-end p-4 xs:p-5 sm:p-8 md:p-12 2xl:p-16 max-w-full sm:max-w-2xl md:max-w-3xl 2xl:max-w-5xl space-y-2.5 sm:space-y-3.5 z-10 pointer-events-auto sm:pointer-events-none bg-surface-card sm:bg-transparent">
         {/* Spotlight Pill & Badges */}
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pointer-events-auto">
           <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-brand-500 text-white shadow-lg shadow-brand-500/40">

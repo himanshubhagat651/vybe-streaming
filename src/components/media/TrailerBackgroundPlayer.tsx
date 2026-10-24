@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Volume2, VolumeX, Clapperboard, RefreshCw } from "lucide-react";
+import { Volume2, VolumeX, Clapperboard, RefreshCw, Maximize2 } from "lucide-react";
 import { playPop } from "@/lib/audio";
 import { cn } from "@/lib/utils";
 
@@ -110,6 +110,23 @@ export function TrailerBackgroundPlayer({
     }
   };
 
+  const toggleFullscreen = () => {
+    playPop();
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    try {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      } else if (iframe.requestFullscreen) {
+        iframe.requestFullscreen().catch(() => {});
+      } else if ((iframe as any).webkitRequestFullscreen) {
+        (iframe as any).webkitRequestFullscreen();
+      }
+    } catch (err) {
+      console.warn("Fullscreen toggle error:", err);
+    }
+  };
+
   return (
     <div className={cn("relative w-full h-full overflow-hidden bg-black select-none", className)}>
       {/* Video Stream Iframe */}
@@ -120,8 +137,8 @@ export function TrailerBackgroundPlayer({
             key={`${provider}-${title}`}
             src={embedUrl}
             title={`${title} Official Trailer Preview (${provider})`}
-            className="w-full h-full border-0 object-cover pointer-events-none scale-[1.35] sm:scale-[1.28] origin-center"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            className="w-full h-full border-0 object-cover pointer-events-none scale-[1.02] sm:scale-[1.28] origin-center"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
             onError={() => {
               if (provider === "youtube" && fallbackUrl) {
@@ -155,8 +172,8 @@ export function TrailerBackgroundPlayer({
       {/* Cinematic Vignette Gradients */}
       {aspectRatio === "banner" && (
         <>
-          {/* Vertical gradient: transparent at top so video is clear on mobile, dark at bottom for readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 via-40% to-transparent pointer-events-none" />
+          {/* Vertical gradient: transparent at top so video is clear on mobile, dark at bottom for readability on desktop */}
+          <div className="hidden sm:block absolute inset-0 bg-gradient-to-t from-background via-background/70 via-40% to-transparent pointer-events-none" />
           <div className="hidden sm:block absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent max-w-4xl 2xl:max-w-6xl pointer-events-none" />
           <div className="hidden sm:block absolute inset-0 bg-radial-gradient from-transparent to-background/30 pointer-events-none" />
         </>
@@ -168,6 +185,17 @@ export function TrailerBackgroundPlayer({
 
       {/* Interactive Floating Video Controls */}
       <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30 flex items-center gap-2 pointer-events-auto">
+        {/* Fullscreen Video Toggle */}
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          className="w-9 h-9 rounded-full bg-black/70 hover:bg-black/90 backdrop-blur-md border border-white/15 text-white/80 hover:text-white hover:scale-105 active:scale-95 shadow-xl flex items-center justify-center transition-all"
+          title="Fullscreen Trailer"
+          aria-label="Fullscreen trailer video"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
+
         {/* Sound Toggle (Mute / Unmute) */}
         <button
           type="button"
