@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Search, Film, Tv, Star, X, AlertCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Search, Film, Tv, Star, X, AlertCircle, ChevronLeft, ChevronRight, Loader2, Magnet } from "lucide-react";
 import { MediaItem, Genre } from "@/lib/types";
 import { MediaCard } from "@/components/media/MediaCard";
 import { MediaModal } from "@/components/media/MediaModal";
+import { TorrentFallbackModal } from "@/components/player/TorrentFallbackModal";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { MediaCardSkeleton } from "@/components/ui/Skeleton";
 import { Button } from "@/components/ui/Button";
@@ -28,6 +29,7 @@ export default function SearchPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
+  const [isTorrentModalOpen, setIsTorrentModalOpen] = useState(false);
 
   // Sync state if URL changes
   useEffect(() => {
@@ -245,16 +247,28 @@ export default function SearchPage() {
           )}
         </>
       ) : initialQuery ? (
-        <EmptyState
-          icon={<Search className="w-10 h-10" />}
-          title="No titles found"
-          description={`No results returned for "${initialQuery}". Verify your keywords or check another media type.`}
-          actionText="Clear Search"
-          onAction={() => {
-            setQuery("");
-            router.push("/search");
-          }}
-        />
+        <div className="space-y-4">
+          <EmptyState
+            icon={<Search className="w-10 h-10" />}
+            title="No titles found on ScreenScape"
+            description={`No direct catalog matches found for "${initialQuery}". You can search decentralized torrent streams for this title.`}
+            actionText="Clear Search"
+            onAction={() => {
+              setQuery("");
+              router.push("/search");
+            }}
+          />
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              onClick={() => setIsTorrentModalOpen(true)}
+              className="text-xs text-indigo-400 hover:text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/10 shadow-sm"
+            >
+              <Magnet className="w-3.5 h-3.5 mr-1.5" />
+              Search Torrents &amp; Magnets for &quot;{initialQuery}&quot;
+            </Button>
+          </div>
+        </div>
       ) : (
         <EmptyState
           icon={<Film className="w-10 h-10" />}
@@ -268,6 +282,16 @@ export default function SearchPage() {
         media={selectedMedia}
         onClose={() => setSelectedMedia(null)}
       />
+
+      {/* Torrent Fallback Modal for Search */}
+      {initialQuery && (
+        <TorrentFallbackModal
+          isOpen={isTorrentModalOpen}
+          onClose={() => setIsTorrentModalOpen(false)}
+          title={initialQuery}
+          type={selectedType === "tv" ? "tv" : "movie"}
+        />
+      )}
     </div>
   );
 }

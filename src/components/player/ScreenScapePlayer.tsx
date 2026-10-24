@@ -14,7 +14,9 @@ import {
   CheckCircle2,
   RefreshCw,
   Sparkles,
+  Magnet,
 } from "lucide-react";
+import { TorrentFallbackModal } from "./TorrentFallbackModal";
 import { MediaType, SupportedLanguage } from "@/lib/types";
 import {
   buildScreenScapeEmbedUrl,
@@ -69,6 +71,7 @@ export function ScreenScapePlayer({
   const [isEmbedReady, setIsEmbedReady] = useState<boolean>(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [isTorrentModalOpen, setIsTorrentModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (user?.preferredLanguage) {
@@ -384,6 +387,18 @@ export function ScreenScapePlayer({
             </a>
           )}
 
+          {/* Torrent / Magnet Fallback Stream Sources */}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setIsTorrentModalOpen(true)}
+            title="Explore decentralized torrent streams & magnets"
+            className="text-xs h-8 text-indigo-400 hover:text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/10"
+          >
+            <Magnet className="w-3 h-3 mr-1" />
+            <span>Torrents</span>
+          </Button>
+
           <Button
             size="sm"
             variant="outline"
@@ -451,6 +466,15 @@ export function ScreenScapePlayer({
           <code>SCREENSCAPE_GET_PROGRESS</code>, <code>SCREENSCAPE_SET_PROGRESS</code>) verified against upstream spec.
         </p>
       </div>
+      {/* Torrent Stream & Magnet Modal */}
+      <TorrentFallbackModal
+        isOpen={isTorrentModalOpen}
+        onClose={() => setIsTorrentModalOpen(false)}
+        title={title}
+        type={type}
+        season={numericSeason}
+        episode={numericEpisode}
+      />
     </div>
   );
 }

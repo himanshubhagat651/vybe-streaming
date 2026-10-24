@@ -31,9 +31,12 @@ export const FALLBACK_PLAYER_BASE_URL =
   process.env.NEXT_PUBLIC_SCREENSCAPE_FALLBACK_URL ||
   "https://nxsha.screenscape.me/embed";
 
+export const VIDLINK_PLAYER_BASE_URL = "https://vidlink.pro";
+
 export const PLAYER_SERVERS = [
   { id: "core", name: "ScreenScape Core (Default)", url: DEFAULT_PLAYER_BASE_URL },
   { id: "nxsha", name: "ScreenScape NXSHA (Mirror)", url: FALLBACK_PLAYER_BASE_URL },
+  { id: "vidlink", name: "VidLink (Fast Fallback Stream)", url: VIDLINK_PLAYER_BASE_URL },
 ];
 
 /**
@@ -95,6 +98,19 @@ export function buildScreenScapeEmbedUrl(options: PlayerUrlOptions): {
   }
 
   const base = options.baseUrl || DEFAULT_PLAYER_BASE_URL;
+
+  // VidLink multi-server fallback format
+  if (base.includes("vidlink.pro")) {
+    const isTv = options.type === "tv";
+    const vidlinkUrl = isTv
+      ? `https://vidlink.pro/tv/${validation.sanitizedTmdbId}/${validation.sanitizedSeason || 1}/${validation.sanitizedEpisode || 1}`
+      : `https://vidlink.pro/movie/${validation.sanitizedTmdbId}`;
+    return {
+      url: vidlinkUrl,
+      validation,
+    };
+  }
+
   const params = new URLSearchParams();
 
   params.set("tmdb", String(validation.sanitizedTmdbId));
