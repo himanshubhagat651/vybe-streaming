@@ -74,7 +74,7 @@ export interface ProviderStatus {
 // Phase 4: Auth, Profiles, Watchlist & History Types
 // ==============================================================================
 
-export type SupportedLanguage = "eng" | "hindi" | "french";
+export type SupportedLanguage = "hindi" | "eng" | "french";
 export type SupportedTheme = "dark" | "light";
 
 export interface UserProfile {

@@ -12,7 +12,7 @@ export const TEST_ACCOUNTS: Record<string, UserProfile> = {
     email: "alex@vybe.tv",
     username: "Alex Vance",
     avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=128&h=128&fit=crop&crop=faces",
-    preferredLanguage: "eng",
+    preferredLanguage: "hindi",
     preferredTheme: "dark",
     createdAt: "2026-10-01T10:00:00Z",
   },
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: data.email || email,
           username: data.username || email?.split("@")[0] || "User",
           avatarUrl: data.avatar_url,
-          preferredLanguage: (data.preferred_language as SupportedLanguage) || "eng",
+          preferredLanguage: (data.preferred_language as SupportedLanguage) || "hindi",
           preferredTheme: (data.preferred_theme as SupportedTheme) || "dark",
           createdAt: data.created_at,
           updatedAt: data.updated_at,
@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: userId,
           email: email,
           username: email?.split("@")[0] || "User",
-          preferredLanguage: "eng",
+          preferredLanguage: "hindi",
           preferredTheme: "dark",
         });
       }
@@ -195,7 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: customId,
         email: email,
         username: email.split("@")[0],
-        preferredLanguage: "eng",
+        preferredLanguage: "hindi",
         preferredTheme: "dark",
         createdAt: new Date().toISOString(),
       };
@@ -234,7 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: {
           data: {
             username: username || email.split("@")[0],
-            preferred_language: "eng",
+            preferred_language: "hindi",
             preferred_theme: "dark",
           },
         },
@@ -259,7 +259,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       id: customId,
       email: email,
       username: username || email.split("@")[0],
-      preferredLanguage: "eng",
+      preferredLanguage: "hindi",
       preferredTheme: "dark",
       createdAt: new Date().toISOString(),
     };

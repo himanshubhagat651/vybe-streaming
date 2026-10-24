@@ -59,9 +59,13 @@ export function ScreenScapePlayer({
   const { history, updateWatchProgress } = useUserData();
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(
-    user?.preferredLanguage || "eng"
-  );
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("vybe_preferred_audio");
+      if (saved) return saved;
+    }
+    return user?.preferredLanguage || "hindi";
+  });
   const [selectedServer, setSelectedServer] = useState<string>(DEFAULT_PLAYER_BASE_URL);
   const [isLoadingIframe, setIsLoadingIframe] = useState<boolean>(true);
   const [reloadKey, setReloadKey] = useState<number>(0);
@@ -81,6 +85,9 @@ export function ScreenScapePlayer({
 
   const handleLanguageChange = (newLang: string) => {
     setSelectedLanguage(newLang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("vybe_preferred_audio", newLang);
+    }
     if (user && (newLang === "eng" || newLang === "hindi" || newLang === "french")) {
       updateProfile({ preferredLanguage: newLang as SupportedLanguage });
     }
@@ -319,7 +326,7 @@ export function ScreenScapePlayer({
             </select>
           </div>
 
-          {/* Audio Language Option */}
+          {/* Audio Language Option with One-Click Hindi Force */}
           <div className="flex items-center gap-2">
             <Globe className="w-3.5 h-3.5 text-indigo-400" />
             <span className="text-xs font-semibold text-foreground">Audio:</span>
@@ -335,6 +342,20 @@ export function ScreenScapePlayer({
                 </option>
               ))}
             </select>
+
+            {/* One-Click Hindi Force Toggle Button */}
+            <button
+              onClick={() => handleLanguageChange(selectedLanguage === "hindi" ? "eng" : "hindi")}
+              title="Force Hindi Audio: Automatically picks Hindi audio tracks (HLS/DASH) and Hindi servers"
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all ${
+                selectedLanguage === "hindi"
+                  ? "bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-emerald-500/15 text-amber-300 border-amber-500/40 shadow-sm"
+                  : "bg-surface-hover text-foreground-muted border-surface-border hover:text-foreground"
+              }`}
+            >
+              <span className="text-xs">🇮🇳</span>
+              <span>{selectedLanguage === "hindi" ? "Hindi Forced (Active)" : "Force Hindi"}</span>
+            </button>
           </div>
 
           {/* postMessage Bridge Badge */}
@@ -456,14 +477,13 @@ export function ScreenScapePlayer({
       <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-surface-hover/70 border border-surface-border text-[11px] text-foreground-muted">
         <Info className="w-3.5 h-3.5 text-brand-400 shrink-0 mt-0.5" />
         <p className="leading-relaxed">
-          <strong>ScreenScape Integration:</strong> Streaming via documented endpoint{" "}
-          <code className="bg-black/30 px-1 py-0.5 rounded text-brand-300 font-mono">
-            {type === "tv"
-              ? `?tmdb=${validation.sanitizedTmdbId}&type=tv&s=${validation.sanitizedSeason}&e=${validation.sanitizedEpisode}&lan=${selectedLanguage}`
-              : `?tmdb=${validation.sanitizedTmdbId}&type=movie&lan=${selectedLanguage}`}
+          <strong>Audio &amp; Streaming:</strong> Audio preference is forced to{" "}
+          <code className="bg-black/30 px-1 py-0.5 rounded text-amber-300 font-mono">
+            lan={selectedLanguage}
           </code>
-          . Multi-server playback, audio tracks, subtitles, and progress postMessage protocol (
-          <code>SCREENSCAPE_GET_PROGRESS</code>, <code>SCREENSCAPE_SET_PROGRESS</code>) verified against upstream spec.
+          {selectedLanguage === "hindi"
+            ? " (ScreenScape automatically detects and auto-selects Hindi audio tracks across multi-audio HLS/DASH streams and prioritizes Hindi servers)"
+            : ""}. Multi-server playback, audio tracks, subtitles, and progress postMessage protocol verified against upstream spec.
         </p>
       </div>
       {/* Torrent Stream & Magnet Modal */}

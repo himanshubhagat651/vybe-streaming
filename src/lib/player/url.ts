@@ -18,9 +18,9 @@ export interface ValidationResult {
 }
 
 export const SUPPORTED_LANGUAGES = [
-  { code: "eng", label: "English" },
-  { code: "hindi", label: "Hindi (Default if available)" },
-  { code: "french", label: "French" },
+  { code: "hindi", label: "🇮🇳 Hindi (Forced Audio Default)" },
+  { code: "eng", label: "🇺🇸 English (Original)" },
+  { code: "french", label: "🇫🇷 French" },
 ] as const;
 
 export const DEFAULT_PLAYER_BASE_URL =
@@ -99,12 +99,12 @@ export function buildScreenScapeEmbedUrl(options: PlayerUrlOptions): {
 
   const base = options.baseUrl || DEFAULT_PLAYER_BASE_URL;
 
-  // VidLink multi-server fallback format
+  // VidLink multi-server fallback format with multi-language enabled
   if (base.includes("vidlink.pro")) {
     const isTv = options.type === "tv";
     const vidlinkUrl = isTv
-      ? `https://vidlink.pro/tv/${validation.sanitizedTmdbId}/${validation.sanitizedSeason || 1}/${validation.sanitizedEpisode || 1}`
-      : `https://vidlink.pro/movie/${validation.sanitizedTmdbId}`;
+      ? `https://vidlink.pro/tv/${validation.sanitizedTmdbId}/${validation.sanitizedSeason || 1}/${validation.sanitizedEpisode || 1}?multiLang=true`
+      : `https://vidlink.pro/movie/${validation.sanitizedTmdbId}?multiLang=true`;
     return {
       url: vidlinkUrl,
       validation,
@@ -121,9 +121,10 @@ export function buildScreenScapeEmbedUrl(options: PlayerUrlOptions): {
     params.set("e", String(validation.sanitizedEpisode || 1));
   }
 
-  if (options.language && options.language.trim()) {
-    params.set("lan", encodeURIComponent(options.language.trim()));
-  }
+  // Force Hindi language unless user explicitly selected another language
+  const requestedLanguage =
+    options.language && options.language.trim() ? options.language.trim() : "hindi";
+  params.set("lan", encodeURIComponent(requestedLanguage));
 
   return {
     url: `${base}?${params.toString()}`,
