@@ -110,12 +110,6 @@ export function TrailerBackgroundPlayer({
     }
   };
 
-  const switchProvider = (target: "youtube" | "dailymotion") => {
-    playPop();
-    setProvider(target);
-    setIsLoading(true);
-  };
-
   return (
     <div className={cn("relative w-full h-full overflow-hidden bg-black select-none", className)}>
       {/* Video Stream Iframe */}
@@ -153,7 +147,7 @@ export function TrailerBackgroundPlayer({
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center transition-opacity duration-500 z-10 pointer-events-none">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 border border-white/10 text-white/80 text-xs font-mono">
             <RefreshCw className="w-3.5 h-3.5 animate-spin text-brand-400" />
-            <span>Streaming {provider === "youtube" ? "YouTube" : "DailyMotion"} Trailer...</span>
+            <span>Streaming Trailer Preview...</span>
           </div>
         </div>
       )}
@@ -173,44 +167,12 @@ export function TrailerBackgroundPlayer({
 
       {/* Interactive Floating Video Controls */}
       <div className="absolute top-4 right-4 z-30 flex items-center gap-2 pointer-events-auto">
-        {/* Provider Switcher Badge (YouTube <-> DailyMotion) */}
-        <div className="flex items-center bg-black/70 backdrop-blur-md rounded-full border border-white/15 p-0.5 shadow-xl text-[11px] font-semibold">
-          <button
-            type="button"
-            onClick={() => switchProvider("youtube")}
-            className={cn(
-              "px-2.5 py-1 rounded-full transition-all flex items-center gap-1",
-              provider === "youtube"
-                ? "bg-red-600 text-white shadow-md shadow-red-600/40"
-                : "text-white/60 hover:text-white"
-            )}
-            title="Watch on YouTube"
-          >
-            <span>▶</span>
-            <span>YouTube</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => switchProvider("dailymotion")}
-            className={cn(
-              "px-2.5 py-1 rounded-full transition-all flex items-center gap-1",
-              provider === "dailymotion"
-                ? "bg-blue-600 text-white shadow-md shadow-blue-600/40"
-                : "text-white/60 hover:text-white"
-            )}
-            title="Watch on DailyMotion fallback"
-          >
-            <span>▷</span>
-            <span>DailyMotion</span>
-          </button>
-        </div>
-
         {/* Sound Toggle (Mute / Unmute) */}
         <button
           type="button"
           onClick={toggleSound}
           className={cn(
-            "w-8 h-8 rounded-full backdrop-blur-md border transition-all hover:scale-105 active:scale-95 shadow-xl flex items-center justify-center",
+            "w-9 h-9 rounded-full backdrop-blur-md border transition-all hover:scale-105 active:scale-95 shadow-xl flex items-center justify-center",
             isMuted
               ? "bg-black/70 hover:bg-black/90 border-white/15 text-white/80"
               : "bg-brand-600 text-white border-brand-400 shadow-brand-500/50"
@@ -218,7 +180,7 @@ export function TrailerBackgroundPlayer({
           title={isMuted ? "Unmute Trailer Audio" : "Mute Trailer Audio"}
           aria-label={isMuted ? "Unmute trailer audio" : "Mute trailer audio"}
         >
-          {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5 animate-pulse" />}
+          {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 animate-pulse" />}
         </button>
       </div>
     </div>
