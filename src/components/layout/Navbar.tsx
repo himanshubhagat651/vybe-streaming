@@ -20,12 +20,16 @@ import {
   LogOut,
   Globe,
   Check,
+  ChevronDown,
+  Sparkles,
 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useAuth } from "@/context/AuthContext";
 import { useUserData } from "@/context/UserDataContext";
 import { fetchSearch } from "@/lib/metadata/client";
 import { MediaItem, SupportedLanguage } from "@/lib/types";
+import { ALL_GENRES } from "@/lib/genres";
+import { cn } from "@/lib/utils";
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -49,10 +53,12 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isGenreOpen, setIsGenreOpen] = useState(false);
   const [isSearchOpenMobile, setIsSearchOpenMobile] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   const profileRef = useRef<HTMLDivElement>(null);
+  const genreDropdownRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -68,6 +74,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
         searchInputRef.current?.select();
       } else if (e.key === "Escape") {
         setShowDropdown(false);
+        setIsGenreOpen(false);
         searchInputRef.current?.blur();
       }
     };
@@ -111,6 +118,9 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setIsProfileOpen(false);
       }
+      if (genreDropdownRef.current && !genreDropdownRef.current.contains(e.target as Node)) {
+        setIsGenreOpen(false);
+      }
       if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
         setShowDropdown(false);
       }
@@ -143,8 +153,8 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
       }`}
     >
       <div className="flex items-center justify-between h-16 px-3.5 sm:px-6 md:px-8 2xl:px-12 max-w-[1920px] 2xl:max-w-[2100px] 3xl:max-w-[2400px] mx-auto gap-4">
-        {/* Left: Sidebar toggle & Brand Logo */}
-        <div className="flex items-center gap-3">
+        {/* Left: Sidebar toggle, Brand Logo & Upper Navigation Tabs */}
+        <div className="flex items-center gap-3 xl:gap-5 shrink-0">
           <button
             onClick={onToggleSidebar}
             aria-label="Toggle Navigation Sidebar"
@@ -153,7 +163,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
             <Menu className="w-5 h-5" />
           </button>
 
-          <Link href="/" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex items-center gap-2.5 group mr-1">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-brand-500/25 group-hover:scale-105 transition-transform">
               <PlayCircle className="w-5 h-5" />
             </div>
@@ -166,10 +176,117 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
               </span>
             </div>
           </Link>
+
+          {/* Upper Tab Navigation (Movies, TV Shows, Anime, Genres Dropdown, Regions) */}
+          <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+            <Link
+              href="/"
+              className="px-3 py-1.5 rounded-xl text-xs xl:text-sm font-semibold text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors"
+            >
+              Home
+            </Link>
+            <Link
+              href="/browse?type=movie"
+              className="px-3 py-1.5 rounded-xl text-xs xl:text-sm font-semibold text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors"
+            >
+              Movies
+            </Link>
+            <Link
+              href="/browse?type=tv"
+              className="px-3 py-1.5 rounded-xl text-xs xl:text-sm font-semibold text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors"
+            >
+              TV Series
+            </Link>
+            <Link
+              href="/anime"
+              className="px-3 py-1.5 rounded-xl text-xs xl:text-sm font-semibold text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors"
+            >
+              Anime
+            </Link>
+
+            {/* GENRES Upper Tab with Interactive Popover */}
+            <div className="relative" ref={genreDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsGenreOpen(!isGenreOpen)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs xl:text-sm font-semibold transition-all",
+                  isGenreOpen
+                    ? "bg-brand-600/20 text-brand-400 border border-brand-500/40 shadow-sm"
+                    : "text-foreground-muted hover:text-foreground hover:bg-surface-hover"
+                )}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-brand-400" />
+                <span>Genres</span>
+                <ChevronDown
+                  className={cn(
+                    "w-3.5 h-3.5 transition-transform duration-200",
+                    isGenreOpen && "rotate-180 text-brand-400"
+                  )}
+                />
+              </button>
+
+              {/* Genres Popover Menu */}
+              {isGenreOpen && (
+                <div className="absolute top-11 left-0 w-80 sm:w-96 p-3.5 rounded-3xl glass-panel shadow-2xl border border-surface-border bg-surface/95 backdrop-blur-2xl z-50 animate-fadeIn space-y-2">
+                  <div className="flex items-center justify-between px-2 pb-2 border-b border-surface-border/60">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-brand-400" />
+                      <span className="text-xs font-bold text-foreground font-mono uppercase tracking-wider">
+                        Browse By Genre
+                      </span>
+                    </div>
+                    <Link
+                      href="/browse"
+                      onClick={() => setIsGenreOpen(false)}
+                      className="text-[11px] font-semibold text-brand-400 hover:text-brand-300"
+                    >
+                      View All &rarr;
+                    </Link>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-1.5 max-h-80 overflow-y-auto no-scrollbar pt-1">
+                    {ALL_GENRES.map((genre) => (
+                      <Link
+                        key={genre.id}
+                        href={
+                          genre.slug === "all"
+                            ? "/browse"
+                            : `/browse?genre=${genre.slug}`
+                        }
+                        onClick={() => setIsGenreOpen(false)}
+                        className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-surface-hover transition-colors group"
+                      >
+                        <span className="text-lg shrink-0 group-hover:scale-110 transition-transform">
+                          {genre.icon}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-foreground group-hover:text-brand-400 truncate">
+                            {genre.name}
+                          </p>
+                          <p className="text-[10px] text-foreground-muted truncate">
+                            {genre.description}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Link
+              href="/browse?region=IN"
+              className="px-3 py-1.5 rounded-xl text-xs xl:text-sm font-semibold text-foreground-muted hover:text-foreground hover:bg-surface-hover transition-colors flex items-center gap-1.5"
+            >
+              <Globe className="w-3.5 h-3.5 text-brand-400" />
+              <span>Regions</span>
+            </Link>
+          </nav>
         </div>
 
         {/* Center: Search Bar with Autocomplete Dropdown (Desktop) */}
-        <div className="hidden md:flex flex-1 max-w-xl mx-4 relative" ref={searchContainerRef}>
+        <div className="hidden md:flex flex-1 max-w-md xl:max-w-lg mx-2 xl:mx-4 relative" ref={searchContainerRef}>
           <form onSubmit={handleSearchSubmit} className="relative w-full">
             <input
               ref={searchInputRef}

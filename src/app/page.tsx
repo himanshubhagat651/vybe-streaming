@@ -11,7 +11,8 @@ import { MediaCardSkeleton } from "@/components/ui/Skeleton";
 import { fetchTrending, fetchPopular, fetchGenres, fetchByGenre, fetchByRegion } from "@/lib/metadata/client";
 import { RegionTabBar } from "@/components/media/RegionTabBar";
 import { getRegionByCode, getStoredSelectedRegion, setStoredSelectedRegion } from "@/lib/regions";
-import { AlertCircle, RefreshCw, History, Play, Globe } from "lucide-react";
+import { ALL_GENRES, getGenreBySlug } from "@/lib/genres";
+import { AlertCircle, RefreshCw, History, Play, Globe, Sparkles, ChevronDown, Plus, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useUserData } from "@/context/UserDataContext";
 
@@ -31,6 +32,35 @@ export default function HomePage() {
   const [trendingAll, setTrendingAll] = useState<MediaItem[]>([]);
   const [genres, setGenres] = useState<Genre[]>([]);
   const [activeGenre, setActiveGenre] = useState("all");
+  const [activeGenreItems, setActiveGenreItems] = useState<MediaItem[]>([]);
+  const [isGenreLoading, setIsGenreLoading] = useState(false);
+  const [isGenreModalOpen, setIsGenreModalOpen] = useState(false);
+  const [genreModalSearch, setGenreModalSearch] = useState("");
+
+  useEffect(() => {
+    if (activeGenre === "all") {
+      setActiveGenreItems([]);
+      return;
+    }
+    if (activeGenre === "anime") {
+      setActiveGenreItems(animeList);
+      return;
+    }
+    setIsGenreLoading(true);
+    fetchByGenre(activeGenre, undefined, 1)
+      .then((data) => {
+        setActiveGenreItems(data.results || []);
+      })
+      .catch(() => {
+        const fallback = trendingAll.filter((m) =>
+          m.genres.some((g) => g.toLowerCase() === activeGenre.toLowerCase())
+        );
+        setActiveGenreItems(fallback);
+      })
+      .finally(() => {
+        setIsGenreLoading(false);
+      });
+  }, [activeGenre, animeList, trendingAll]);
 
   const [selectedRegion, setSelectedRegion] = useState<string>("IN");
   const [regionalItems, setRegionalItems] = useState<MediaItem[]>([]);
@@ -247,53 +277,115 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Quick Category Filter Pills */}
-          {genres.length > 0 && (
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {/* Upper Genre Tab Bar with "+ More Genres" Modal */}
+          <div className="space-y-3 pt-1 select-none">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-brand-400" />
+                <span className="text-xs sm:text-sm font-bold text-foreground tracking-wide uppercase font-mono">
+                  Explore By Genre
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-semibold">
+                  Categories
+                </span>
+              </div>
+
               <button
                 type="button"
-                onClick={() => setActiveGenre("all")}
-                className={`px-4 py-2 rounded-full text-xs md:text-sm font-semibold tracking-wide whitespace-nowrap transition-all select-none ${
-                  activeGenre === "all"
-                    ? "bg-brand-600 text-white shadow-lg shadow-brand-600/30 scale-105"
-                    : "bg-surface hover:bg-surface-hover text-foreground-muted hover:text-foreground border border-surface-border"
-                }`}
+                onClick={() => setIsGenreModalOpen(true)}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-xl text-xs font-semibold bg-surface-hover hover:bg-surface-border text-brand-400 hover:text-brand-300 border border-surface-border transition-all active:scale-95 shadow-sm"
               >
-                All
+                <span>All Genres</span>
+                <ChevronDown className="w-3.5 h-3.5" />
               </button>
-              {genres.slice(0, 10).map((genre) => (
-                <button
-                  key={genre.id}
-                  type="button"
-                  onClick={() => setActiveGenre(genre.slug)}
-                  className={`px-4 py-2 rounded-full text-xs md:text-sm font-semibold tracking-wide whitespace-nowrap transition-all select-none ${
-                    activeGenre === genre.slug
-                      ? "bg-brand-600 text-white shadow-lg shadow-brand-600/30 scale-105"
-                      : "bg-surface hover:bg-surface-hover text-foreground-muted hover:text-foreground border border-surface-border"
-                  }`}
-                >
-                  {genre.name}
-                </button>
-              ))}
             </div>
-          )}
+
+            {/* Horizontal Scrollable Genre Tabs */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
+              {ALL_GENRES.slice(0, 11).map((genre) => {
+                const isActive = activeGenre.toLowerCase() === genre.slug.toLowerCase();
+                return (
+                  <button
+                    key={genre.id}
+                    type="button"
+                    onClick={() => setActiveGenre(genre.slug)}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap transition-all duration-200 select-none active:scale-95 border ${
+                      isActive
+                        ? "bg-gradient-to-r from-brand-600 to-indigo-600 text-white border-brand-500/50 shadow-lg shadow-brand-600/30 scale-[1.02] font-bold"
+                        : "bg-surface hover:bg-surface-hover text-foreground-muted hover:text-foreground border-surface-border"
+                    }`}
+                  >
+                    <span>{genre.icon}</span>
+                    <span>{genre.name}</span>
+                  </button>
+                );
+              })}
+
+              {/* More Genres Button */}
+              <button
+                type="button"
+                onClick={() => setIsGenreModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap bg-surface-hover/60 hover:bg-brand-600/10 text-brand-400 hover:text-brand-300 border border-dashed border-brand-500/40 transition-all active:scale-95"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>More Genres...</span>
+              </button>
+            </div>
+          </div>
 
           {/* Active Genre Filter Showcase */}
           {activeGenre !== "all" && (
-            <div className="p-4 rounded-3xl bg-brand-600/10 border border-brand-500/20">
-              <MediaRow
-                title={`${genres.find((g) => g.slug === activeGenre)?.name || activeGenre} Spotlight`}
-                subtitle={`Showing featured ${activeGenre} titles from the catalog`}
-                items={
-                  activeGenre === "anime"
-                    ? animeList
-                    : trendingAll.filter((m) =>
-                        m.genres.some((g) => g.toLowerCase() === activeGenre.toLowerCase())
-                      )
-                }
-                viewAllHref={`/browse?genre=${activeGenre}`}
-                onOpenInfo={(item) => setSelectedMedia(item)}
-              />
+            <div className="p-4 sm:p-5 rounded-3xl bg-brand-600/10 border border-brand-500/20 space-y-2 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg sm:text-xl font-black text-foreground flex items-center gap-2">
+                    <span>{getGenreBySlug(activeGenre)?.icon || "🎬"}</span>
+                    <span>{getGenreBySlug(activeGenre)?.name || activeGenre} Spotlight</span>
+                  </h3>
+                  <p className="text-xs text-foreground-muted mt-0.5">
+                    {getGenreBySlug(activeGenre)?.description || `Featured ${activeGenre} titles from our catalog`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveGenre("all")}
+                    className="text-xs font-semibold text-foreground-muted hover:text-foreground px-2.5 py-1 rounded-lg hover:bg-surface border border-transparent hover:border-surface-border transition-colors"
+                  >
+                    Clear Filter
+                  </button>
+                  <Link
+                    href={`/browse?genre=${activeGenre}`}
+                    className="text-xs font-bold text-brand-400 hover:text-brand-300 flex items-center gap-1"
+                  >
+                    <span>Explore full catalog &rarr;</span>
+                  </Link>
+                </div>
+              </div>
+
+              {isGenreLoading ? (
+                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none pt-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex-none w-[145px] xs:w-[160px] sm:w-[185px] md:w-[200px] aspect-poster rounded-2xl bg-surface-hover shimmer"
+                    />
+                  ))}
+                </div>
+              ) : activeGenreItems.length > 0 ? (
+                <div className="pt-2">
+                  <MediaRow
+                    title=""
+                    items={activeGenreItems}
+                    viewAllHref={`/browse?genre=${activeGenre}`}
+                    onOpenInfo={(item) => setSelectedMedia(item)}
+                  />
+                </div>
+              ) : (
+                <div className="py-6 text-center text-xs text-foreground-muted">
+                  No titles found for {activeGenre}.
+                </div>
+              )}
             </div>
           )}
 
@@ -400,6 +492,100 @@ export default function HomePage() {
         media={selectedMedia}
         onClose={() => setSelectedMedia(null)}
       />
+
+      {/* Full Genres Modal Dialog */}
+      {isGenreModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/85 backdrop-blur-md animate-fadeIn"
+          onClick={() => setIsGenreModalOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-xl bg-surface border border-surface-border rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-5 border-b border-surface-border flex items-center justify-between bg-surface-hover/30">
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="w-5 h-5 text-brand-400" />
+                <div>
+                  <h3 className="font-bold text-base text-foreground">Select Genre</h3>
+                  <p className="text-xs text-foreground-muted">
+                    Filter by movie & TV show categories
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGenreModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-surface-hover hover:bg-surface-border text-foreground-muted hover:text-foreground flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Search */}
+            <div className="p-4 border-b border-surface-border/60">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-foreground-muted" />
+                <input
+                  type="text"
+                  placeholder="Search genres (e.g. Action, Horror, Anime, Comedy)..."
+                  value={genreModalSearch}
+                  onChange={(e) => setGenreModalSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-background border border-surface-border text-xs text-foreground placeholder:text-foreground-muted/60 focus:outline-none focus:border-brand-500"
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* Genres List */}
+            <div className="p-4 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {ALL_GENRES.filter(
+                (g) =>
+                  genreModalSearch.trim() === "" ||
+                  g.name.toLowerCase().includes(genreModalSearch.toLowerCase()) ||
+                  g.slug.toLowerCase().includes(genreModalSearch.toLowerCase()) ||
+                  g.description.toLowerCase().includes(genreModalSearch.toLowerCase())
+              ).map((genre) => {
+                const isSelected = activeGenre.toLowerCase() === genre.slug.toLowerCase();
+                return (
+                  <button
+                    key={genre.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveGenre(genre.slug);
+                      setIsGenreModalOpen(false);
+                      setGenreModalSearch("");
+                    }}
+                    className={`flex items-start gap-3 p-3 rounded-2xl text-left border transition-all ${
+                      isSelected
+                        ? "bg-brand-600/15 border-brand-500/50 shadow-sm"
+                        : "bg-surface-hover/50 hover:bg-surface-hover border-surface-border/60 hover:border-surface-border"
+                    }`}
+                  >
+                    <span className="text-2xl shrink-0">{genre.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs font-bold ${isSelected ? "text-brand-400" : "text-foreground"}`}>
+                          {genre.name}
+                        </span>
+                        {isSelected && (
+                          <span className="text-[10px] font-bold text-brand-400 bg-brand-500/20 px-1.5 py-0.5 rounded-full">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-foreground-muted line-clamp-1 mt-0.5">
+                        {genre.description}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
