@@ -8,6 +8,16 @@ const config: Config = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+    screens: {
+      xs: "480px",
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1536px",
+      "3xl": "1920px",
+      "4k": "2560px",
+    },
     extend: {
       colors: {
         background: "var(--background)",
@@ -38,6 +48,12 @@ const config: Config = {
       aspectRatio: {
         poster: "2 / 3",
         backdrop: "16 / 9",
+        cinema: "21 / 9",
+      },
+      maxWidth: {
+        "8xl": "90rem",
+        "9xl": "105rem",
+        "10xl": "120rem",
       },
       keyframes: {
         shimmer: {

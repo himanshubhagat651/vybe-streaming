@@ -160,7 +160,7 @@ export default function HomePage() {
                   return (
                     <div
                       key={item.id}
-                      className="group relative flex-none w-64 sm:w-72 rounded-2xl overflow-hidden bg-surface border border-surface-border hover:border-brand-500/40 transition-all select-none shadow-md"
+                      className="group relative flex-none w-56 xs:w-64 sm:w-72 lg:w-80 2xl:w-96 rounded-2xl overflow-hidden bg-surface border border-surface-border hover:border-brand-500/40 transition-all select-none shadow-md"
                     >
                       <Link href={watchUrl} className="relative aspect-video w-full block bg-black">
                         {imageSrc && (

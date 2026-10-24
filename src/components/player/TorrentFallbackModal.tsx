@@ -101,8 +101,8 @@ export function TorrentFallbackModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md animate-fadeIn select-none">
-      <div className="relative w-full max-w-2xl bg-surface border border-surface-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-background/80 backdrop-blur-md animate-fadeIn select-none">
+      <div className="relative w-full max-w-2xl 2xl:max-w-3xl bg-surface border border-surface-border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Modal Header */}
         <div className="px-5 py-4 border-b border-surface-border flex items-center justify-between bg-surface-hover/30">
           <div className="flex items-center gap-2.5">

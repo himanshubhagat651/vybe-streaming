@@ -142,7 +142,7 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
           : "bg-gradient-to-b from-background via-background/60 to-transparent"
       }`}
     >
-      <div className="flex items-center justify-between h-16 px-4 md:px-6 max-w-7xl mx-auto gap-4">
+      <div className="flex items-center justify-between h-16 px-3.5 sm:px-6 md:px-8 2xl:px-12 max-w-[1920px] 2xl:max-w-[2100px] 3xl:max-w-[2400px] mx-auto gap-4">
         {/* Left: Sidebar toggle & Brand Logo */}
         <div className="flex items-center gap-3">
           <button

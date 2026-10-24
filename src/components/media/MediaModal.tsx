@@ -53,15 +53,15 @@ export function MediaModal({ media, onClose }: MediaModalProps) {
   const watchUrl = `/watch/${media.type}/${media.tmdbId}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-fadeIn">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/80 backdrop-blur-md transition-opacity"
+        className="fixed inset-0 bg-black/85 backdrop-blur-md transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-3xl rounded-3xl overflow-hidden glass-panel border border-surface-border shadow-2xl z-10 max-h-[90vh] flex flex-col bg-surface">
+      <div className="relative w-full max-w-3xl 2xl:max-w-4xl rounded-2xl sm:rounded-3xl overflow-hidden glass-panel border border-surface-border shadow-2xl z-10 max-h-[90vh] flex flex-col bg-surface">
         {/* Close Button */}
         <button
           onClick={onClose}

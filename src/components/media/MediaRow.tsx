@@ -145,7 +145,7 @@ export function MediaRow({ title, subtitle, items, viewAllHref, onOpenInfo }: Me
         {items.map((item) => (
           <div
             key={item.id}
-            className="w-[170px] sm:w-[195px] md:w-[215px] shrink-0 snap-start"
+            className="w-[145px] xs:w-[165px] sm:w-[185px] md:w-[205px] lg:w-[220px] 2xl:w-[250px] 3xl:w-[280px] shrink-0 snap-start"
           >
             <MediaCard media={item} onOpenInfo={onOpenInfo} />
           </div>

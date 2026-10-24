@@ -62,8 +62,8 @@ export default function HistoryPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 3 }).map((_, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4 sm:gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
               className="aspect-video rounded-3xl bg-surface border border-surface-border animate-pulse"
@@ -71,7 +71,7 @@ export default function HistoryPage() {
           ))}
         </div>
       ) : history.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4 sm:gap-6">
           {history.map((item) => {
             const watchUrl = `/watch/${item.mediaType}/${item.tmdbId}${
               item.season ? `?s=${item.season}&e=${item.episode}` : ""

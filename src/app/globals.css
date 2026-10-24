@@ -36,9 +36,31 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /* TV / 10-foot UI text scaling for ultra-large displays */
+  @media (min-width: 1920px) {
+    html {
+      font-size: 16.5px;
+    }
+  }
+
+  @media (min-width: 2560px) {
+    html {
+      font-size: 18px;
+    }
+  }
+
   * {
     border-color: var(--surface-border);
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Fluid Images, Videos, and Iframes */
+  img,
+  video,
+  iframe {
+    max-width: 100%;
+    height: auto;
+    display: block;
   }
 
   body {
@@ -149,10 +171,61 @@
   animation: shimmer 1.8s infinite linear;
 }
 
-/* Focus visibility for accessibility */
+/* Focus visibility for accessibility & TV remote navigation */
 button:focus-visible,
 a:focus-visible,
-input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* Flexible Grid Utility for Catalog Cards */
+.fluid-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .fluid-card-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.125rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .fluid-card-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .fluid-card-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .fluid-card-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 1.35rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .fluid-card-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .fluid-card-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 1.75rem;
+  }
 }

@@ -45,7 +45,7 @@ export function AppShell({ children }: AppShellProps) {
             isSidebarOpen ? "md:ml-60" : "md:ml-20"
           )}
         >
-          <main className="flex-1 max-w-7xl mx-auto px-4 md:px-8 pb-16 pt-4 w-full">
+          <main className="flex-1 max-w-[1920px] 2xl:max-w-[2100px] 3xl:max-w-[2400px] mx-auto px-3.5 sm:px-6 md:px-8 2xl:px-12 pb-16 pt-3 md:pt-5 w-full">
             {children}
             <Footer />
           </main>

@@ -133,10 +133,10 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
       </Link>
 
       {/* Card Body */}
-      <div className="p-3 flex flex-col flex-1 justify-between gap-1.5">
+      <div className="p-2.5 sm:p-3 2xl:p-4 flex flex-col flex-1 justify-between gap-1 sm:gap-1.5">
         <div>
-          <div className="flex items-center gap-1.5 text-[11px] text-foreground-muted font-medium">
-            <span className="uppercase tracking-wider font-mono text-[10px] text-brand-400 font-semibold">
+          <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] 2xl:text-xs text-foreground-muted font-medium">
+            <span className="uppercase tracking-wider font-mono text-[9px] sm:text-[10px] 2xl:text-[11px] text-brand-400 font-semibold">
               {media.type === "tv" ? "TV Series" : "Movie"}
             </span>
             {media.releaseYear && <span>•</span>}
@@ -145,18 +145,18 @@ export function MediaCard({ media, onOpenInfo }: MediaCardProps) {
             {media.runtime && <span>{media.runtime}</span>}
           </div>
 
-          <h3 className="font-bold text-sm text-foreground group-hover:text-brand-400 transition-colors line-clamp-1 mt-0.5">
+          <h3 className="font-bold text-xs sm:text-sm 2xl:text-base text-foreground group-hover:text-brand-400 transition-colors line-clamp-1 mt-0.5">
             <Link href={watchUrl}>{media.title}</Link>
           </h3>
         </div>
 
         {/* Genres Pill Row */}
         {media.genres && media.genres.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1">
+          <div className="flex flex-wrap gap-1 mt-0.5 sm:mt-1">
             {media.genres.slice(0, 2).map((genre) => (
               <span
                 key={genre}
-                className="text-[10px] px-1.5 py-0.5 rounded-md bg-surface-hover/80 text-foreground-muted border border-surface-border font-medium"
+                className="text-[9px] sm:text-[10px] 2xl:text-xs px-1.5 py-0.5 rounded-md bg-surface-hover/80 text-foreground-muted border border-surface-border font-medium"
               >
                 {genre}
               </span>
