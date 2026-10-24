@@ -38,6 +38,7 @@ interface TorrentFallbackModalProps {
   year?: string;
   season?: number | string;
   episode?: number | string;
+  onStreamInBrowser?: () => void;
 }
 
 export function TorrentFallbackModal({
@@ -48,6 +49,7 @@ export function TorrentFallbackModal({
   year,
   season,
   episode,
+  onStreamInBrowser,
 }: TorrentFallbackModalProps) {
   const [streams, setStreams] = useState<TorrentStream[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -203,6 +205,28 @@ export function TorrentFallbackModal({
           </button>
         </div>
 
+        {/* In-Browser Streaming Quick Action */}
+        {onStreamInBrowser && (
+          <div className="px-5 py-3 bg-brand-500/10 border-b border-brand-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2 text-foreground">
+              <span className="text-brand-400 font-semibold">⚡ Direct Browser Stream:</span>
+              <span className="text-foreground-muted hidden sm:inline">
+                Want to play right now without installing any torrent apps?
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                onClose();
+                onStreamInBrowser();
+              }}
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-md shadow-brand-600/20 transition-all shrink-0"
+            >
+              <span>Play in Browser (VidLink)</span>
+              <ExternalLink className="w-3 h-3 opacity-70" />
+            </button>
+          </div>
+        )}
+
         {/* Filter bar */}
         <div className="px-5 py-2.5 bg-surface-hover/10 border-b border-surface-border flex items-center justify-between gap-3 text-xs">
           <span className="text-foreground-muted">
@@ -317,17 +341,17 @@ export function TorrentFallbackModal({
                       title="Copy Magnet Link to Clipboard"
                     >
                       {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{isCopied ? "Copied!" : "Magnet"}</span>
+                      <span>{isCopied ? "Copied!" : "Copy Magnet"}</span>
                     </button>
 
                     <a
                       href={s.magnetUrl}
-                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-600/20 transition-colors"
-                      title="Open directly in BitTorrent client or Stremio"
+                      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold bg-surface-hover hover:bg-surface-border text-foreground border border-surface-border transition-colors"
+                      title="Open directly in torrent client (qBittorrent, Stremio, or VLC)"
                     >
-                      <Magnet className="w-3.5 h-3.5" />
-                      <span>Stream / Play</span>
-                      <ExternalLink className="w-3 h-3 opacity-70" />
+                      <Magnet className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Open in App</span>
+                      <ExternalLink className="w-3 h-3 opacity-60" />
                     </a>
                   </div>
                 </div>
@@ -337,10 +361,10 @@ export function TorrentFallbackModal({
         </div>
 
         {/* Modal Footer Note */}
-        <div className="px-5 py-3 bg-surface-hover/20 border-t border-surface-border flex items-center justify-between text-[11px] text-foreground-muted">
+        <div className="px-5 py-3 bg-surface-hover/20 border-t border-surface-border flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-foreground-muted">
           <div className="flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-brand-400" />
-            <span>Click &apos;Stream / Play&apos; to launch your BitTorrent player, Stremio, or WebTorrent.</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+            <span>Magnets require a torrent client like qBittorrent, Stremio, or VLC (Media &rarr; Open Network Stream).</span>
           </div>
           <Button size="sm" variant="ghost" onClick={onClose} className="h-7 text-xs">
             Close

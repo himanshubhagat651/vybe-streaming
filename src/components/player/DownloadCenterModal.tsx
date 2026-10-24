@@ -16,6 +16,7 @@ import {
   AlertCircle,
   PlayCircle,
   Sliders,
+  Magnet,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
@@ -383,11 +384,11 @@ export function DownloadCenterModal({
 
                     <a
                       href={s.magnetUrl}
-                      className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-600/20 transition-all hover:scale-[1.02]"
-                      title="Download full quality video file"
+                      className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-xs font-semibold bg-surface-hover hover:bg-surface-border text-foreground border border-surface-border transition-all"
+                      title="Open in torrent application (qBittorrent, Stremio, or VLC)"
                     >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Download File</span>
+                      <Magnet className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Open in Torrent App</span>
                     </a>
                   </div>
                 </div>

@@ -26,6 +26,7 @@ import {
   PLAYER_SERVERS,
   SUPPORTED_LANGUAGES,
   DEFAULT_PLAYER_BASE_URL,
+  VIDLINK_PLAYER_BASE_URL,
 } from "@/lib/player/url";
 import {
   isPermittedOrigin,
@@ -528,6 +529,7 @@ export function ScreenScapePlayer({
         type={type}
         season={numericSeason}
         episode={numericEpisode}
+        onStreamInBrowser={() => setSelectedServer(VIDLINK_PLAYER_BASE_URL)}
       />
 
       {/* Direct & Fast Download Center Modal */}
