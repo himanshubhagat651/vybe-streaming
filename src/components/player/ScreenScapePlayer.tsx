@@ -302,6 +302,28 @@ export function ScreenScapePlayer({
         )}
       </div>
 
+      {/* Hindi Audio Server Tip Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-surface to-brand-500/10 border border-amber-500/30 text-xs animate-fadeIn">
+        <div className="flex items-start sm:items-center gap-2.5">
+          <span className="text-base shrink-0 mt-0.5 sm:mt-0">🇮🇳</span>
+          <div className="space-y-0.5 leading-snug">
+            <span className="font-bold text-amber-300">How to listen in Hindi:</span>
+            <span className="text-foreground-muted ml-1.5">
+              Inside the video player, click the <strong>Server menu (top-left corner of video)</strong> and select <strong>HDHub</strong>, <strong>CineHindi</strong>, or <strong>HindiBox</strong>, or click the <strong>Audio / Settings gear icon</strong> on multi-audio streams.
+            </span>
+          </div>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setIsTorrentModalOpen(true)}
+          className="text-[11px] h-7 text-amber-300 hover:text-amber-200 border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 shrink-0 self-start sm:self-auto"
+        >
+          <Magnet className="w-3 h-3 mr-1" />
+          <span>Dual Audio Torrents</span>
+        </Button>
+      </div>
+
       {/* Responsive Player Control Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-surface border border-surface-border">
         {/* Left: Mirror Server, Audio Language, & postMessage Bridge Status */}

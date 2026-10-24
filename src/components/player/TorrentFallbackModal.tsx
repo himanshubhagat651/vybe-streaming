@@ -110,11 +110,13 @@ export function TorrentFallbackModal({
                 const filename = s.behaviorHints?.filename || lines[0] || title;
                 const magnetUrl = `magnet:?xt=urn:btih:${s.infoHash}&dn=${encodeURIComponent(filename)}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce`;
 
+                const isHindi = /hindi|dual\s*audio|multi\s*audio|dubbed/i.test(s.title) || /hindi/i.test(s.name);
+
                 return {
                   infoHash: s.infoHash,
                   name: s.name,
                   title: filename,
-                  quality: /HDR/i.test(s.title) ? "HDR" : "Standard",
+                  quality: isHindi ? "Hindi Dubbed" : /HDR/i.test(s.title) ? "HDR" : "Standard",
                   resolution,
                   seeders: seedMatch ? parseInt(seedMatch[1], 10) : undefined,
                   size: sizeMatch ? sizeMatch[1] : undefined,
@@ -158,6 +160,13 @@ export function TorrentFallbackModal({
   };
 
   const filteredStreams = streams.filter((s) => {
+    if (filterRes === "hindi") {
+      return (
+        s.quality.includes("Hindi") ||
+        /hindi|dual\s*audio|multi\s*audio/i.test(s.title) ||
+        /hindi/i.test(s.name)
+      );
+    }
     if (filterRes === "4k") return s.resolution.includes("4K");
     if (filterRes === "1080p") return s.resolution.includes("1080p");
     if (filterRes === "720p") return s.resolution.includes("720p");
@@ -201,17 +210,22 @@ export function TorrentFallbackModal({
           </span>
 
           <div className="flex items-center gap-1">
-            {["all", "4k", "1080p", "720p"].map((res) => (
+            {[
+              { id: "all", label: "ALL" },
+              { id: "hindi", label: "🇮🇳 HINDI" },
+              { id: "4k", label: "4K" },
+              { id: "1080p", label: "1080P" },
+            ].map((tab) => (
               <button
-                key={res}
-                onClick={() => setFilterRes(res)}
+                key={tab.id}
+                onClick={() => setFilterRes(tab.id)}
                 className={`px-2.5 py-1 rounded-lg text-[11px] font-medium transition-all ${
-                  filterRes === res
+                  filterRes === tab.id
                     ? "bg-brand-600 text-white shadow-sm"
                     : "text-foreground-muted hover:text-foreground hover:bg-surface-hover"
                 }`}
               >
-                {res.toUpperCase()}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -256,11 +270,16 @@ export function TorrentFallbackModal({
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase bg-brand-500/20 text-brand-300 border border-brand-500/30">
                         {s.resolution}
                       </span>
-                      {s.quality !== "Standard" && (
+                      {s.quality.includes("Hindi") ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm flex items-center gap-1">
+                          <span>🇮🇳</span>
+                          <span>Hindi Dubbed</span>
+                        </span>
+                      ) : s.quality !== "Standard" ? (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-300 border border-amber-500/20">
                           {s.quality}
                         </span>
-                      )}
+                      ) : null}
                       {s.source && (
                         <span className="text-[10px] text-foreground-muted/70">via {s.source}</span>
                       )}
