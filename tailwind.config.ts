@@ -49,10 +49,20 @@ const config: Config = {
           from: { opacity: "0", transform: "translateY(8px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        scaleUp: {
+          from: { opacity: "0", transform: "scale(0.96) translateY(6px)" },
+          to: { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
+        pulseGlow: {
+          "0%, 100%": { opacity: "0.35", transform: "scale(1)" },
+          "50%": { opacity: "0.6", transform: "scale(1.05)" },
+        },
       },
       animation: {
-        shimmer: "shimmer 2s infinite",
-        fadeIn: "fadeIn 0.3s ease-out forwards",
+        shimmer: "shimmer 2s infinite linear",
+        fadeIn: "fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        scaleUp: "scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        pulseGlow: "pulseGlow 4s ease-in-out infinite",
       },
     },
   },

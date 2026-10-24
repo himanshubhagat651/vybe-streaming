@@ -110,6 +110,7 @@ export default function HomePage() {
           {featuredMedia && (
             <HeroBanner
               media={featuredMedia}
+              items={trendingAll.filter((m) => m.backdropUrl && m.overview)}
               onOpenInfo={(item) => setSelectedMedia(item)}
             />
           )}

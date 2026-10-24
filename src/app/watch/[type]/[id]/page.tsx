@@ -221,8 +221,20 @@ function WatchPageContent() {
         <div
           className={`${
             media.type === "tv" && seasonsToRender.length > 0 && !isTheaterMode ? "lg:col-span-2" : "col-span-1"
-          } space-y-6`}
+          } space-y-6 relative`}
         >
+          {/* Ambient Cinema Atmospheric Glow */}
+          {media.backdropUrl && (
+            <div
+              className="absolute -inset-4 sm:-inset-8 rounded-3xl opacity-25 blur-3xl -z-10 pointer-events-none transition-opacity duration-1000 hidden md:block"
+              style={{
+                backgroundImage: `url(${media.backdropUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            />
+          )}
+
           <ScreenScapePlayer
             tmdbId={actualTmdbId}
             type={mediaType}

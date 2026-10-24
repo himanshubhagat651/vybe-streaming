@@ -18,8 +18,8 @@ export function MobileNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-background/90 backdrop-blur-xl border-t border-surface-border py-1 px-2">
-      <div className="flex items-center justify-around h-14">
+    <nav className="fixed bottom-0 inset-x-0 z-50 md:hidden bg-background/90 backdrop-blur-2xl border-t border-surface-border/80 px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-2xl">
+      <div className="flex items-center justify-around h-13 max-w-md mx-auto">
         {links.map((link) => {
           const Icon = link.icon;
           const isActive =
@@ -32,13 +32,21 @@ export function MobileNav() {
               key={link.name}
               href={link.href}
               className={cn(
-                "flex flex-col items-center justify-center w-14 h-full gap-1 rounded-xl transition-colors",
+                "relative flex flex-col items-center justify-center w-14 h-12 gap-1 rounded-2xl transition-all duration-200 active:scale-90",
                 isActive
-                  ? "text-brand-500 font-semibold"
+                  ? "text-brand-400 font-bold"
                   : "text-foreground-muted hover:text-foreground"
               )}
             >
-              <Icon className="w-5 h-5" />
+              {isActive && (
+                <div className="absolute inset-0 bg-brand-500/10 rounded-2xl -z-10 animate-scaleUp" />
+              )}
+              <Icon
+                className={cn(
+                  "w-5 h-5 transition-transform duration-200",
+                  isActive ? "scale-110 text-brand-400" : ""
+                )}
+              />
               <span className="text-[10px] tracking-tight">{link.name}</span>
             </Link>
           );

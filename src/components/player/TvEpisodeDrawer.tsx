@@ -57,7 +57,7 @@ export function TvEpisodeDrawer({
       </div>
 
       {/* Episode Grid / List */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 max-h-[500px] overflow-y-auto pr-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 max-h-[540px] overflow-y-auto pr-1 no-scrollbar scroll-smooth">
         {currentSeason?.episodes.map((ep) => {
           const isPlaying =
             activeSeason === selectedSeasonNumber && activeEpisode === ep.episodeNumber;

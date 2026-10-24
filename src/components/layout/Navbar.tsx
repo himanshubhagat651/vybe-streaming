@@ -54,6 +54,27 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
 
   const profileRef = useRef<HTMLDivElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      } else if (e.key === "/" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      } else if (e.key === "Escape") {
+        setShowDropdown(false);
+        searchInputRef.current?.blur();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -151,13 +172,14 @@ export function Navbar({ onToggleSidebar }: NavbarProps) {
         <div className="hidden md:flex flex-1 max-w-xl mx-4 relative" ref={searchContainerRef}>
           <form onSubmit={handleSearchSubmit} className="relative w-full">
             <input
+              ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => {
                 if (autocompleteResults.length > 0) setShowDropdown(true);
               }}
-              placeholder="Search movies, TV series, actors... (Press Enter)"
+              placeholder="Search movies, TV series, actors... (Press ⌘K or /)"
               className="w-full h-10 pl-10 pr-24 rounded-full bg-surface/80 border border-surface-border text-sm text-foreground placeholder:text-foreground-muted/60 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all shadow-inner"
             />
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-muted" />

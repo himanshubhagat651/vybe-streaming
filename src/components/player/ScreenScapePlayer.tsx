@@ -395,42 +395,18 @@ export function ScreenScapePlayer({
             </div>
           </div>
 
-          {/* postMessage Bridge Badge */}
+          {/* Stream Status Badge */}
           <div
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium border ${
-              isEmbedReady
-                ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                : "bg-surface-hover text-foreground-muted border-surface-border"
-            }`}
-            title="postMessage bridge to ScreenScape embed"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium border bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+            title="Fast direct stream from CDN"
           >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isEmbedReady ? "bg-emerald-400 animate-pulse" : "bg-foreground-muted/40"
-              }`}
-            />
-            <span>{isEmbedReady ? "Bridge Connected" : "Bridge Initializing"}</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Fast CDN Stream</span>
           </div>
         </div>
 
-        {/* Right: Sync Progress, Theater Mode, Fullscreen & Stream Reload */}
+        {/* Right: Download, Torrents, Theater Mode & Fullscreen */}
         <div className="flex items-center gap-2">
-          {/* postMessage Progress Query Button */}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleSyncFromEmbed}
-            disabled={isSyncing}
-            title="Query progress via postMessage"
-            className="text-xs h-8 text-brand-400 hover:text-brand-300 border-brand-500/30 hover:bg-brand-500/10"
-          >
-            {isSyncing ? (
-              <RefreshCw className="w-3 h-3 animate-spin mr-1" />
-            ) : (
-              <Sparkles className="w-3 h-3 mr-1" />
-            )}
-            <span>Sync Progress</span>
-          </Button>
 
           {/* Universal Download Button (Always Visible) */}
           <Button
@@ -508,18 +484,14 @@ export function ScreenScapePlayer({
         </div>
       )}
 
-      {/* Documented Integration Info Bar */}
-      <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-surface-hover/70 border border-surface-border text-[11px] text-foreground-muted">
-        <Info className="w-3.5 h-3.5 text-brand-400 shrink-0 mt-0.5" />
-        <p className="leading-relaxed">
-          <strong>Audio &amp; Streaming:</strong> Audio preference is forced to{" "}
-          <code className="bg-black/30 px-1 py-0.5 rounded text-amber-300 font-mono">
-            lan={selectedLanguage}
-          </code>
-          {selectedLanguage === "hindi"
-            ? " (ScreenScape automatically detects and auto-selects Hindi audio tracks across multi-audio HLS/DASH streams and prioritizes Hindi servers)"
-            : ""}. Multi-server playback, audio tracks, subtitles, and progress postMessage protocol verified against upstream spec.
-        </p>
+      {/* In-Player Audio & Server Tips */}
+      <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-surface-hover/60 border border-surface-border text-xs text-foreground-muted">
+        <div className="flex items-center gap-2">
+          <span className="text-base shrink-0">🇮🇳</span>
+          <p className="leading-relaxed">
+            <strong>Hindi Audio:</strong> If the default player track is in English, click the server dropdown in the top-left corner of the video and select <strong>HDHub</strong>, <strong>CineHindi</strong>, or <strong>HindiBox</strong>.
+          </p>
+        </div>
       </div>
       {/* Torrent Stream & Magnet Modal */}
       <TorrentFallbackModal
