@@ -76,9 +76,64 @@ export function TorrentFallbackModal({
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then((data) => {
+      .then(async (data) => {
         if (!isMounted) return;
-        setStreams(data.streams || []);
+
+        // If server got streams, use them
+        if (data.streams && data.streams.length > 0) {
+          setStreams(data.streams);
+          setLoading(false);
+          return;
+        }
+
+        // Client-side fallback: If Vercel Edge was blocked by Torrentio (HTTP 403),
+        // query directly from the user's browser (residential IP)
+        if (data.imdbId) {
+          try {
+            const stremType = type === "tv" ? "series" : "movie";
+            const stremId = type === "tv" ? `${data.imdbId}:${season || 1}:${episode || 1}` : data.imdbId;
+            const clientRes = await fetch(`https://torrentio.strem.fun/stream/${stremType}/${stremId}.json`);
+            if (clientRes.ok) {
+              const clientData = await clientRes.json();
+              const raw = clientData?.streams || [];
+              const parsed = raw.filter((s: any) => s.infoHash).map((s: any) => {
+                const lines = (s.title || "").split("\n");
+                const seedMatch = (s.title || "").match(/👤\s*(\d+)/);
+                const sizeMatch = (s.title || "").match(/💾\s*([\d\.]+\s*[GMK]B)/i);
+                const sourceMatch = (s.title || "").match(/⚙️\s*([^\n]+)/);
+
+                let resolution = "1080p";
+                if (/4k|2160p/i.test(s.name) || /2160p|4k/i.test(s.title)) resolution = "4K 2160p";
+                else if (/1080p/i.test(s.name) || /1080p/i.test(s.title)) resolution = "1080p FHD";
+                else if (/720p/i.test(s.name) || /720p/i.test(s.title)) resolution = "720p HD";
+
+                const filename = s.behaviorHints?.filename || lines[0] || title;
+                const magnetUrl = `magnet:?xt=urn:btih:${s.infoHash}&dn=${encodeURIComponent(filename)}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337%2Fannounce&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce`;
+
+                return {
+                  infoHash: s.infoHash,
+                  name: s.name,
+                  title: filename,
+                  quality: /HDR/i.test(s.title) ? "HDR" : "Standard",
+                  resolution,
+                  seeders: seedMatch ? parseInt(seedMatch[1], 10) : undefined,
+                  size: sizeMatch ? sizeMatch[1] : undefined,
+                  source: sourceMatch ? sourceMatch[1].trim() : undefined,
+                  filename,
+                  magnetUrl,
+                };
+              });
+              parsed.sort((a: any, b: any) => (b.seeders || 0) - (a.seeders || 0));
+              setStreams(parsed);
+              setLoading(false);
+              return;
+            }
+          } catch {
+            // Ignore client fallback error
+          }
+        }
+
+        setStreams([]);
         setLoading(false);
       })
       .catch((err) => {
